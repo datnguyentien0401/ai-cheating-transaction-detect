@@ -106,7 +106,7 @@ class FraudDetectionSystem:
         ).all()
         return recent
     
-    def _check_ip_location(self, user_id, ip_address, geolocation):
+    def _check_ip_location(self, db: Session, user_id, ip_address, geolocation):
         """Kiểm tra vị trí IP có bất thường không"""
         # Kiểm tra IP có trong danh sách đen không
         if ip_address in self.known_bad_ips:
@@ -117,7 +117,7 @@ class FraudDetectionSystem:
             }
         
         # Kiểm tra vị trí có trong lịch sử không
-        locations = self._get_user_location_history(None, user_id)
+        locations = self._get_user_location_history(db, user_id)
         if locations and geolocation not in locations:
             return {
                 'is_suspicious': True,
@@ -127,9 +127,9 @@ class FraudDetectionSystem:
         
         return {'is_suspicious': False, 'reason': '', 'risk_score': 0.0}
     
-    def _check_amount(self, user_id, amount):
+    def _check_amount(self, db: Session, user_id, amount):
         """Kiểm tra số tiền giao dịch có bất thường không"""
-        avg_amount = self._get_average_transaction_amount(None, user_id)
+        avg_amount = self._get_average_transaction_amount(db, user_id)
         threshold = avg_amount * self.thresholds['amount_threshold_factor']
         
         if amount > threshold and threshold > 0:
@@ -141,9 +141,9 @@ class FraudDetectionSystem:
         
         return {'is_suspicious': False, 'reason': '', 'risk_score': 0.0}
     
-    def _check_category(self, user_id, category):
+    def _check_category(self, db: Session, user_id, category):
         """Kiểm tra danh mục sản phẩm có bất thường không"""
-        common_categories = self._get_common_categories(None, user_id)
+        common_categories = self._get_common_categories(db, user_id)
         
         if common_categories and category not in common_categories:
             return {
@@ -154,14 +154,14 @@ class FraudDetectionSystem:
         
         return {'is_suspicious': False, 'reason': '', 'risk_score': 0.0}
     
-    def _check_time(self, user_id, timestamp):
+    def _check_time(self, db: Session, user_id, timestamp):
         """Kiểm tra thời gian giao dịch có bất thường không"""
         hour = timestamp.hour
         
         # Kiểm tra giờ giao dịch có trong khoảng đáng ngờ không
         if self.thresholds['suspicious_hour_start'] <= hour <= self.thresholds['suspicious_hour_end']:
             # Kiểm tra xem người dùng có thường xuyên giao dịch vào giờ này không
-            common_hours = self._get_common_transaction_times(None, user_id)
+            common_hours = self._get_common_transaction_times(db, user_id)
             if hour not in common_hours:
                 return {
                     'is_suspicious': True,
@@ -171,9 +171,9 @@ class FraudDetectionSystem:
         
         return {'is_suspicious': False, 'reason': '', 'risk_score': 0.0}
     
-    def _check_frequency(self, user_id, timestamp):
+    def _check_frequency(self, db: Session, user_id, timestamp):
         """Kiểm tra tần suất giao dịch có bất thường không"""
-        recent = self._get_recent_transactions(None, user_id, hours=1)
+        recent = self._get_recent_transactions(db, user_id, hours=1)
         
         if len(recent) >= self.thresholds['max_transactions_per_hour']:
             return {
@@ -184,10 +184,12 @@ class FraudDetectionSystem:
         
         return {'is_suspicious': False, 'reason': '', 'risk_score': 0.0}
     
-    def _check_device(self, user_id, device_id):
+    def _check_device(self, db: Session, user_id, device_id):
         """Kiểm tra thiết bị có bất thường không"""
-        if user_id in self.user_profiles and 'devices' in self.user_profiles[user_id]:
-            if device_id not in self.user_profiles[user_id]['devices']:
+        user_profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
+        if user_profile and user_profile.common_devices:
+            common_devices = json.loads(user_profile.common_devices)
+            if device_id not in common_devices:
                 return {
                     'is_suspicious': True,
                     'reason': f'Thiết bị mới: {device_id}',
@@ -323,55 +325,60 @@ class FraudDetectionSystem:
         db.commit()
     
     def analyze_transaction(self, db: Session, transaction_data: dict):
-        """Phân tích giao dịch và trả về kết quả đánh giá rủi ro"""
-        user_id = transaction_data.get('user_id')
-        ip_address = transaction_data.get('ip_address')
-        geolocation = transaction_data.get('geolocation')
-        amount = transaction_data.get('amount', 0)
-        category = transaction_data.get('category')
-        timestamp = transaction_data.get('timestamp', datetime.now())
-        device_id = transaction_data.get('device_id')
-        
-        # Thực hiện các kiểm tra
-        results = {
-            'ip_location': self._check_ip_location(user_id, ip_address, geolocation),
-            'amount': self._check_amount(user_id, amount),
-            'category': self._check_category(user_id, category),
-            'time': self._check_time(user_id, timestamp),
-            'frequency': self._check_frequency(user_id, timestamp),
-            'device': self._check_device(user_id, device_id)
-        }
-        
-        # Tính điểm rủi ro từ các kiểm tra riêng biệt
-        risk_factors = [r['risk_score'] for r in results.values()]
-        rules_risk_score = max(risk_factors) if risk_factors else 0
-        
-        # Tính điểm rủi ro từ mô hình máy học
-        model_risk_score = self.predict_with_model(transaction_data)
-        
-        # Kết hợp điểm rủi ro
-        final_risk_score = max(rules_risk_score, model_risk_score)
-        
-        # Tổng hợp lý do nếu có
-        suspicious_reasons = [r['reason'] for r in results.values() if r['is_suspicious']]
-        
-        # Xây dựng kết quả
-        analysis_result = {
-            'is_suspicious': final_risk_score >= self.thresholds['anomaly_score_threshold'],
-            'risk_score': final_risk_score,
-            'reasons': suspicious_reasons,
-            'rule_based_score': rules_risk_score,
-            'model_score': model_risk_score
-        }
-        
-        # Log kết quả
-        if analysis_result['is_suspicious']:
-            self.logger.warning(
-                f"Phát hiện giao dịch đáng ngờ: user_id={user_id}, "
-                f"risk_score={final_risk_score:.2f}, reasons={suspicious_reasons}"
-            )
-        
-        return analysis_result
+        """Phân tích giao dịch và trả về kết quả"""
+        try:
+            # Lấy thông tin giao dịch
+            user_id = transaction_data['user_id']
+            amount = transaction_data['amount']
+            category = transaction_data.get('category', '')
+            timestamp = transaction_data['timestamp']
+            ip_address = transaction_data['ip_address']
+            geolocation = transaction_data.get('geolocation', '')
+            device_id = transaction_data.get('device_id', '')
+            
+            # Thực hiện các kiểm tra dựa trên quy tắc
+            results = {
+                'ip_location': self._check_ip_location(db, user_id, ip_address, geolocation),
+                'amount': self._check_amount(db, user_id, amount),
+                'category': self._check_category(db, user_id, category),
+                'time': self._check_time(db, user_id, timestamp),
+                'frequency': self._check_frequency(db, user_id, timestamp),
+                'device': self._check_device(db, user_id, device_id)
+            }
+            
+            # Tính điểm rủi ro từ các quy tắc
+            risk_factors = [r['risk_score'] for r in results.values()]
+            rules_risk_score = max(risk_factors) if risk_factors else 0
+            
+            # Tính điểm rủi ro từ mô hình máy học
+            model_risk_score = self.predict_with_model(transaction_data)
+            
+            # Kết hợp điểm rủi ro
+            final_risk_score = max(rules_risk_score, model_risk_score)
+            is_suspicious = final_risk_score >= self.thresholds['anomaly_score_threshold']
+            
+            # Tổng hợp lý do
+            reasons = [result['reason'] for result in results.values() if result['reason']]
+            
+            return {
+                'is_suspicious': is_suspicious,
+                'risk_score': final_risk_score,
+                'reasons': reasons,
+                'details': {
+                    'rule_based_score': rules_risk_score,
+                    'model_score': model_risk_score,
+                    'checks': results
+                }
+            }
+            
+        except Exception as e:
+            self.logger.error(f"Lỗi khi phân tích giao dịch: {str(e)}")
+            return {
+                'is_suspicious': True,
+                'risk_score': 1.0,
+                'reasons': ['Lỗi khi phân tích giao dịch'],
+                'details': {}
+            }
     
     def send_alert(self, db: Session, user_id: str, analysis_result, transaction_data):
         """Gửi cảnh báo cho người dùng nếu phát hiện giao dịch đáng ngờ"""
