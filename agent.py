@@ -110,6 +110,30 @@ class FraudDetectionSystem:
         ).all()
         return recent
     
+    def _get_user_profile(self, db: Session, user_id: str) -> Optional[Dict]:
+        """
+        Lấy thông tin profile của user từ database
+        """
+        try:
+            # Lấy user profile từ database
+            profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
+            
+            if not profile:
+                return None
+                
+            # Chuyển đổi profile thành dictionary
+            return {
+                'common_locations': json.loads(profile.common_locations) if profile.common_locations else [],
+                'common_devices': json.loads(profile.common_devices) if profile.common_devices else [],
+                'common_categories': json.loads(profile.common_categories) if profile.common_categories else [],
+                'avg_transaction_amount': profile.avg_transaction_amount,
+                'typical_transaction_hours': json.loads(profile.typical_transaction_hours) if profile.typical_transaction_hours else []
+            }
+            
+        except Exception as e:
+            logging.error(f"Error getting user profile: {str(e)}")
+            return None
+    
     def _check_ip_location(self, db: Session, user_id, ip_address, geolocation):
         """Kiểm tra vị trí IP có bất thường không"""
         # Kiểm tra IP có trong danh sách đen không
@@ -589,30 +613,6 @@ class FraudDetectionSystem:
                 'analysis': str(e),
                 'is_suspicious': False
             }
-
-    def _get_user_profile(self, db: Session, user_id: str) -> Optional[Dict]:
-        """
-        Lấy thông tin profile của user từ database
-        """
-        try:
-            # Lấy user profile từ database
-            profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
-            
-            if not profile:
-                return None
-                
-            # Chuyển đổi profile thành dictionary
-            return {
-                'common_locations': json.loads(profile.common_locations) if profile.common_locations else [],
-                'common_devices': json.loads(profile.common_devices) if profile.common_devices else [],
-                'common_categories': json.loads(profile.common_categories) if profile.common_categories else [],
-                'avg_transaction_amount': profile.avg_transaction_amount,
-                'typical_transaction_hours': json.loads(profile.typical_transaction_hours) if profile.typical_transaction_hours else []
-            }
-            
-        except Exception as e:
-            logging.error(f"Error getting user profile: {str(e)}")
-            return None
 
 # Ví dụ sử dụng hệ thống
 if __name__ == "__main__":
