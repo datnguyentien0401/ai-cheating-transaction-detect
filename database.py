@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, Boolean, JSON, ForeignKey
+from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, Boolean, JSON, ForeignKey, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from datetime import datetime
@@ -58,6 +58,8 @@ class Transaction(Base):
     risk_score = Column(Float, default=0.0)
     verified = Column(Boolean, default=False)
     is_fraud = Column(Boolean, default=False)
+    ai_analysis = Column(Text)  # Lưu kết quả phân tích từ OpenAI
+    traditional_analysis = Column(JSON)  # Lưu kết quả phân tích truyền thống
     
     # Relationships
     user = relationship("User", back_populates="transactions")

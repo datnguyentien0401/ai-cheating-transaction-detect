@@ -1,0 +1,1004 @@
+{
+  "training_data": [
+    {
+      "user_id": "user1",
+      "amount": 3451704,
+      "category": "clothing",
+      "timestamp": "2025-03-31T05:05:14.944671",
+      "ip_address": "192.168.1.196",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-5695",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 2641441,
+      "category": "clothing",
+      "timestamp": "2025-04-15T01:53:14.944671",
+      "ip_address": "192.168.1.158",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-3983",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 3921465,
+      "category": "electronics",
+      "timestamp": "2025-03-30T05:58:14.944671",
+      "ip_address": "192.168.1.236",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-9951",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 8609933,
+      "category": "travel",
+      "timestamp": "2025-04-12T06:42:14.944671",
+      "ip_address": "192.168.1.186",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-2983",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 2498016,
+      "category": "electronics",
+      "timestamp": "2025-03-29T13:37:14.944671",
+      "ip_address": "192.168.1.4",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-4531",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 7720949,
+      "category": "entertainment",
+      "timestamp": "2025-04-13T19:16:14.944671",
+      "ip_address": "192.168.1.116",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-2063",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 7407068,
+      "category": "electronics",
+      "timestamp": "2025-04-13T03:31:14.944671",
+      "ip_address": "192.168.1.183",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-2039",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 7089849,
+      "category": "clothing",
+      "timestamp": "2025-03-25T03:45:14.944671",
+      "ip_address": "192.168.1.197",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-3253",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 1957410,
+      "category": "electronics",
+      "timestamp": "2025-03-22T14:26:14.944671",
+      "ip_address": "192.168.1.168",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-9279",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 3140392,
+      "category": "clothing",
+      "timestamp": "2025-03-24T05:16:14.944671",
+      "ip_address": "192.168.1.54",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-9554",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 2650964,
+      "category": "travel",
+      "timestamp": "2025-04-13T22:24:14.944671",
+      "ip_address": "192.168.1.179",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-2072",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 43106985.446998574,
+      "category": "entertainment",
+      "timestamp": "2025-04-16T00:06:14.944671",
+      "ip_address": "192.168.1.15",
+      "geolocation": "Malaysia",
+      "device_id": "web-chrome-4419",
+      "is_fraud": true
+    },
+    {
+      "user_id": "user1",
+      "amount": 8735970,
+      "category": "entertainment",
+      "timestamp": "2025-03-31T05:55:14.944671",
+      "ip_address": "192.168.1.221",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-5958",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 9653701,
+      "category": "entertainment",
+      "timestamp": "2025-03-27T19:42:14.944671",
+      "ip_address": "192.168.1.63",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-5915",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 218019.81949626532,
+      "category": "utilities",
+      "timestamp": "2025-04-06T07:14:14.944671",
+      "ip_address": "192.168.1.71",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-ios-9469",
+      "is_fraud": true
+    },
+    {
+      "user_id": "user1",
+      "amount": 6884687,
+      "category": "clothing",
+      "timestamp": "2025-04-05T16:59:14.944671",
+      "ip_address": "192.168.1.196",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-8200",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 2743240,
+      "category": "travel",
+      "timestamp": "2025-04-21T02:44:14.944671",
+      "ip_address": "192.168.1.218",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-8147",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 5227392,
+      "category": "electronics",
+      "timestamp": "2025-04-13T14:33:14.944671",
+      "ip_address": "192.168.1.231",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-4049",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 9472171,
+      "category": "entertainment",
+      "timestamp": "2025-04-18T03:11:14.944671",
+      "ip_address": "192.168.1.7",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-4405",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 5508397,
+      "category": "clothing",
+      "timestamp": "2025-04-04T01:09:14.944671",
+      "ip_address": "192.168.1.250",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-6976",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 3588123,
+      "category": "travel",
+      "timestamp": "2025-03-26T22:01:14.944671",
+      "ip_address": "192.168.1.43",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-4261",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 7052286,
+      "category": "utilities",
+      "timestamp": "2025-03-27T02:29:14.944671",
+      "ip_address": "192.168.1.115",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-6749",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 9969258,
+      "category": "travel",
+      "timestamp": "2025-04-17T10:17:14.944671",
+      "ip_address": "192.168.1.157",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-1372",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 13648117.50272144,
+      "category": "entertainment",
+      "timestamp": "2025-03-25T11:45:14.944671",
+      "ip_address": "192.168.1.140",
+      "geolocation": "Indonesia",
+      "device_id": "web-safari-6081",
+      "is_fraud": true
+    },
+    {
+      "user_id": "user1",
+      "amount": 1694156,
+      "category": "food",
+      "timestamp": "2025-03-30T08:13:14.944671",
+      "ip_address": "192.168.1.228",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-6188",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 9646240,
+      "category": "entertainment",
+      "timestamp": "2025-04-17T12:58:14.944671",
+      "ip_address": "192.168.1.5",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-1493",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 32858375.34246552,
+      "category": "travel",
+      "timestamp": "2025-04-02T18:40:14.944671",
+      "ip_address": "192.168.1.12",
+      "geolocation": "Vietnam",
+      "device_id": "tablet-android-5655",
+      "is_fraud": true
+    },
+    {
+      "user_id": "user1",
+      "amount": 5745222,
+      "category": "food",
+      "timestamp": "2025-03-31T18:43:14.944671",
+      "ip_address": "192.168.1.24",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-4997",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 8191263,
+      "category": "travel",
+      "timestamp": "2025-04-18T11:25:14.944671",
+      "ip_address": "192.168.1.137",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-4590",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 13866723.077029401,
+      "category": "food",
+      "timestamp": "2025-04-08T05:23:14.944671",
+      "ip_address": "192.168.1.119",
+      "geolocation": "Thailand",
+      "device_id": "web-safari-4349",
+      "is_fraud": true
+    },
+    {
+      "user_id": "user1",
+      "amount": 3162787,
+      "category": "clothing",
+      "timestamp": "2025-04-09T19:31:14.944671",
+      "ip_address": "192.168.1.81",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-3275",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 15827518.2730209,
+      "category": "electronics",
+      "timestamp": "2025-04-18T19:44:14.944671",
+      "ip_address": "192.168.1.164",
+      "geolocation": "Vietnam",
+      "device_id": "web-safari-9002",
+      "is_fraud": true
+    },
+    {
+      "user_id": "user1",
+      "amount": 8432869,
+      "category": "travel",
+      "timestamp": "2025-04-11T01:33:14.944671",
+      "ip_address": "192.168.1.145",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-8397",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 7138777,
+      "category": "electronics",
+      "timestamp": "2025-04-19T01:33:14.944671",
+      "ip_address": "192.168.1.59",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-4079",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 8165162,
+      "category": "travel",
+      "timestamp": "2025-03-27T19:17:14.944671",
+      "ip_address": "192.168.1.153",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-1868",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 6953624,
+      "category": "entertainment",
+      "timestamp": "2025-04-17T00:49:14.944671",
+      "ip_address": "192.168.1.63",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-8546",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 6487086,
+      "category": "utilities",
+      "timestamp": "2025-04-21T15:25:14.944671",
+      "ip_address": "192.168.1.176",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-2577",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 7416091,
+      "category": "utilities",
+      "timestamp": "2025-03-29T19:00:14.944671",
+      "ip_address": "192.168.1.27",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-8281",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 6247180,
+      "category": "utilities",
+      "timestamp": "2025-04-01T07:22:14.944671",
+      "ip_address": "192.168.1.205",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-5960",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 3701133,
+      "category": "utilities",
+      "timestamp": "2025-03-29T16:40:14.944671",
+      "ip_address": "192.168.1.154",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-5474",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 2661064,
+      "category": "electronics",
+      "timestamp": "2025-03-28T11:46:14.944671",
+      "ip_address": "192.168.1.184",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-4340",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 2972322,
+      "category": "entertainment",
+      "timestamp": "2025-04-09T14:11:14.944671",
+      "ip_address": "192.168.1.181",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-5991",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 6381445,
+      "category": "utilities",
+      "timestamp": "2025-04-03T07:55:14.944671",
+      "ip_address": "192.168.1.143",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-9352",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 486784,
+      "category": "utilities",
+      "timestamp": "2025-03-22T02:33:14.944671",
+      "ip_address": "192.168.1.149",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-8012",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 9141854,
+      "category": "electronics",
+      "timestamp": "2025-04-06T03:19:14.944671",
+      "ip_address": "192.168.1.202",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-1182",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 3927027,
+      "category": "clothing",
+      "timestamp": "2025-03-23T23:35:14.944671",
+      "ip_address": "192.168.1.158",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-5368",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 231596,
+      "category": "electronics",
+      "timestamp": "2025-04-18T04:04:14.944671",
+      "ip_address": "192.168.1.175",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-3023",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 5536052,
+      "category": "electronics",
+      "timestamp": "2025-03-29T01:41:14.944671",
+      "ip_address": "192.168.1.44",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-7297",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 4088998,
+      "category": "food",
+      "timestamp": "2025-04-09T12:01:14.944671",
+      "ip_address": "192.168.1.142",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-3292",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 9376443,
+      "category": "food",
+      "timestamp": "2025-04-05T09:57:14.944671",
+      "ip_address": "192.168.1.102",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-6510",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 4761739,
+      "category": "food",
+      "timestamp": "2025-03-21T21:49:14.944671",
+      "ip_address": "192.168.1.118",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-7171",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 5068958,
+      "category": "electronics",
+      "timestamp": "2025-03-21T22:57:14.944671",
+      "ip_address": "192.168.1.120",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-6832",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 495252,
+      "category": "clothing",
+      "timestamp": "2025-03-26T03:01:14.944671",
+      "ip_address": "192.168.1.66",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-4741",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 7519446,
+      "category": "electronics",
+      "timestamp": "2025-04-20T14:38:14.944671",
+      "ip_address": "192.168.1.106",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-1817",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 9435256,
+      "category": "electronics",
+      "timestamp": "2025-04-18T06:25:14.944671",
+      "ip_address": "192.168.1.204",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-3980",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 3835359,
+      "category": "travel",
+      "timestamp": "2025-03-25T06:20:14.944671",
+      "ip_address": "192.168.1.161",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-9048",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 12758870.908630108,
+      "category": "utilities",
+      "timestamp": "2025-03-25T02:04:14.944671",
+      "ip_address": "192.168.1.137",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-ios-2265",
+      "is_fraud": true
+    },
+    {
+      "user_id": "user1",
+      "amount": 6526167,
+      "category": "clothing",
+      "timestamp": "2025-03-31T02:53:14.944671",
+      "ip_address": "192.168.1.78",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-3828",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 6483445,
+      "category": "utilities",
+      "timestamp": "2025-03-29T09:17:14.944671",
+      "ip_address": "192.168.1.35",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-8494",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 21413392.15891284,
+      "category": "food",
+      "timestamp": "2025-03-31T18:56:14.944671",
+      "ip_address": "192.168.1.227",
+      "geolocation": "Vietnam",
+      "device_id": "tablet-android-1219",
+      "is_fraud": true
+    },
+    {
+      "user_id": "user1",
+      "amount": 8134592,
+      "category": "clothing",
+      "timestamp": "2025-04-21T10:29:14.944671",
+      "ip_address": "192.168.1.38",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-5522",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 18705153.78088278,
+      "category": "clothing",
+      "timestamp": "2025-03-24T03:18:14.944671",
+      "ip_address": "192.168.1.170",
+      "geolocation": "Vietnam",
+      "device_id": "web-safari-3441",
+      "is_fraud": true
+    },
+    {
+      "user_id": "user1",
+      "amount": 411347,
+      "category": "food",
+      "timestamp": "2025-03-31T00:53:14.944671",
+      "ip_address": "192.168.1.138",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-1065",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 5634371,
+      "category": "utilities",
+      "timestamp": "2025-04-10T21:49:14.944671",
+      "ip_address": "192.168.1.13",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-1668",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 2613883,
+      "category": "clothing",
+      "timestamp": "2025-04-13T15:11:14.944671",
+      "ip_address": "192.168.1.84",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-2224",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 8589798,
+      "category": "food",
+      "timestamp": "2025-03-29T06:53:14.944671",
+      "ip_address": "192.168.1.230",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-9231",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 3296327,
+      "category": "food",
+      "timestamp": "2025-04-15T16:34:14.944671",
+      "ip_address": "192.168.1.46",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-1422",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 38464152.06558765,
+      "category": "travel",
+      "timestamp": "2025-04-18T10:59:14.944671",
+      "ip_address": "192.168.1.232",
+      "geolocation": "Vietnam",
+      "device_id": "tablet-android-5115",
+      "is_fraud": true
+    },
+    {
+      "user_id": "user1",
+      "amount": 5114468.863423671,
+      "category": "utilities",
+      "timestamp": "2025-04-01T13:41:14.944671",
+      "ip_address": "192.168.1.28",
+      "geolocation": "Vietnam",
+      "device_id": "web-chrome-2572",
+      "is_fraud": true
+    },
+    {
+      "user_id": "user1",
+      "amount": 6983185,
+      "category": "electronics",
+      "timestamp": "2025-03-28T21:48:14.944671",
+      "ip_address": "192.168.1.207",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-4809",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 57365,
+      "category": "food",
+      "timestamp": "2025-04-09T03:27:14.944671",
+      "ip_address": "192.168.1.43",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-5176",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 6943011,
+      "category": "clothing",
+      "timestamp": "2025-04-20T11:35:14.944671",
+      "ip_address": "192.168.1.33",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-9964",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 12888432.87354757,
+      "category": "utilities",
+      "timestamp": "2025-03-23T15:52:14.944671",
+      "ip_address": "192.168.1.111",
+      "geolocation": "Indonesia",
+      "device_id": "web-safari-6587",
+      "is_fraud": true
+    },
+    {
+      "user_id": "user1",
+      "amount": 2136380,
+      "category": "travel",
+      "timestamp": "2025-04-13T15:27:14.944671",
+      "ip_address": "192.168.1.52",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-3684",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 325797.6314853499,
+      "category": "utilities",
+      "timestamp": "2025-03-22T14:36:14.944671",
+      "ip_address": "192.168.1.196",
+      "geolocation": "Vietnam",
+      "device_id": "tablet-android-4319",
+      "is_fraud": true
+    },
+    {
+      "user_id": "user1",
+      "amount": 2129191,
+      "category": "travel",
+      "timestamp": "2025-04-18T14:43:14.944671",
+      "ip_address": "192.168.1.110",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-9475",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 8423411,
+      "category": "entertainment",
+      "timestamp": "2025-04-19T23:10:14.944671",
+      "ip_address": "192.168.1.60",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-5581",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 11747935.445860378,
+      "category": "entertainment",
+      "timestamp": "2025-04-01T16:47:14.944671",
+      "ip_address": "192.168.1.131",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-ios-4483",
+      "is_fraud": true
+    },
+    {
+      "user_id": "user1",
+      "amount": 9542707,
+      "category": "food",
+      "timestamp": "2025-04-14T07:53:14.944671",
+      "ip_address": "192.168.1.91",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-5640",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 6563744,
+      "category": "electronics",
+      "timestamp": "2025-04-14T20:44:14.944671",
+      "ip_address": "192.168.1.136",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-9377",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 4141092,
+      "category": "food",
+      "timestamp": "2025-03-29T22:57:14.944671",
+      "ip_address": "192.168.1.232",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-7239",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 161662,
+      "category": "food",
+      "timestamp": "2025-04-06T09:32:14.944671",
+      "ip_address": "192.168.1.11",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-9955",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 18115725.339043226,
+      "category": "utilities",
+      "timestamp": "2025-04-01T20:12:14.944671",
+      "ip_address": "192.168.1.60",
+      "geolocation": "Thailand",
+      "device_id": "mobile-ios-7929",
+      "is_fraud": true
+    },
+    {
+      "user_id": "user1",
+      "amount": 1672462,
+      "category": "travel",
+      "timestamp": "2025-04-04T20:29:14.944671",
+      "ip_address": "192.168.1.156",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-8516",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 39353330.517690144,
+      "category": "food",
+      "timestamp": "2025-04-21T12:46:14.944671",
+      "ip_address": "192.168.1.233",
+      "geolocation": "Vietnam",
+      "device_id": "web-chrome-8166",
+      "is_fraud": true
+    },
+    {
+      "user_id": "user1",
+      "amount": 7253158,
+      "category": "electronics",
+      "timestamp": "2025-04-17T00:40:14.944671",
+      "ip_address": "192.168.1.146",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-4965",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 566196,
+      "category": "electronics",
+      "timestamp": "2025-03-23T17:18:14.944671",
+      "ip_address": "192.168.1.193",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-3897",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 5492808,
+      "category": "entertainment",
+      "timestamp": "2025-04-05T21:41:14.944671",
+      "ip_address": "192.168.1.251",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-2564",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 8018131,
+      "category": "entertainment",
+      "timestamp": "2025-03-23T11:33:14.944671",
+      "ip_address": "192.168.1.122",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-3814",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 7792181,
+      "category": "food",
+      "timestamp": "2025-03-25T22:42:14.944671",
+      "ip_address": "192.168.1.118",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-9862",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 9938477,
+      "category": "clothing",
+      "timestamp": "2025-04-03T21:04:14.944671",
+      "ip_address": "192.168.1.131",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-8112",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 1930446.6654676967,
+      "category": "electronics",
+      "timestamp": "2025-04-14T13:30:14.944671",
+      "ip_address": "192.168.1.148",
+      "geolocation": "Vietnam",
+      "device_id": "web-safari-4580",
+      "is_fraud": true
+    },
+    {
+      "user_id": "user1",
+      "amount": 29308679.19709886,
+      "category": "clothing",
+      "timestamp": "2025-04-01T16:18:14.944671",
+      "ip_address": "192.168.1.106",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-ios-1970",
+      "is_fraud": true
+    },
+    {
+      "user_id": "user1",
+      "amount": 6299883,
+      "category": "clothing",
+      "timestamp": "2025-03-27T00:20:14.944671",
+      "ip_address": "192.168.1.117",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-4849",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 8558414.26708318,
+      "category": "travel",
+      "timestamp": "2025-04-03T03:40:14.944671",
+      "ip_address": "192.168.1.137",
+      "geolocation": "Vietnam",
+      "device_id": "web-safari-4679",
+      "is_fraud": true
+    },
+    {
+      "user_id": "user1",
+      "amount": 6289958.866842225,
+      "category": "entertainment",
+      "timestamp": "2025-04-11T21:58:14.944671",
+      "ip_address": "192.168.1.50",
+      "geolocation": "Vietnam",
+      "device_id": "web-chrome-7168",
+      "is_fraud": true
+    },
+    {
+      "user_id": "user1",
+      "amount": 5157394,
+      "category": "food",
+      "timestamp": "2025-04-10T21:04:14.944671",
+      "ip_address": "192.168.1.66",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-4291",
+      "is_fraud": false
+    },
+    {
+      "user_id": "user1",
+      "amount": 14522319.611913895,
+      "category": "electronics",
+      "timestamp": "2025-03-26T21:49:14.944671",
+      "ip_address": "192.168.1.102",
+      "geolocation": "Vietnam",
+      "device_id": "web-safari-8129",
+      "is_fraud": true
+    },
+    {
+      "user_id": "user1",
+      "amount": 20605410.366350997,
+      "category": "electronics",
+      "timestamp": "2025-03-26T17:20:14.944671",
+      "ip_address": "192.168.1.198",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-ios-5968",
+      "is_fraud": true
+    },
+    {
+      "user_id": "user1",
+      "amount": 5211288,
+      "category": "utilities",
+      "timestamp": "2025-04-20T05:36:14.944671",
+      "ip_address": "192.168.1.108",
+      "geolocation": "Vietnam",
+      "device_id": "mobile-android-1526",
+      "is_fraud": false
+    }
+  ]
+}

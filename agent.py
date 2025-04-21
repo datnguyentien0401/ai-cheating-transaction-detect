@@ -11,6 +11,10 @@ import logging
 from database import get_db, User, Transaction, UserProfile, Alert
 from sqlalchemy.orm import Session
 import json
+import os
+from openai import OpenAI
+import uuid
+from typing import Dict, List, Optional, Tuple
 
 class FraudDetectionSystem:
     def __init__(self):
@@ -99,7 +103,7 @@ class FraudDetectionSystem:
     
     def _get_recent_transactions(self, db: Session, user_id: str, hours=1):
         """Lấy số lượng giao dịch gần đây trong khoảng thời gian chỉ định từ database"""
-        cutoff_time = datetime.utcnow() - pd.Timedelta(hours=hours)
+        cutoff_time = datetime.now() - pd.Timedelta(hours=hours)
         recent = db.query(Transaction).filter(
             Transaction.user_id == user_id,
             Transaction.timestamp >= cutoff_time
@@ -206,12 +210,19 @@ class FraudDetectionSystem:
         
         try:
             # Chuẩn bị dữ liệu
-            X = pd.DataFrame(transaction_data)
-            y = X.pop('is_fraud') if 'is_fraud' in X.columns else None
+            df = pd.DataFrame(transaction_data)
+            
+            # Chuyển đổi timestamp thành giờ
+            df['hour'] = pd.to_datetime(df['timestamp']).dt.hour
+            
+            # Tách features và target
+            features = ['amount', 'hour']
+            X = df[features]
+            y = df['is_fraud'] if 'is_fraud' in df.columns else None
             
             # Xác định các cột theo loại
-            numeric_features = X.select_dtypes(include=['int64', 'float64']).columns
             categorical_features = X.select_dtypes(include=['object', 'category']).columns
+            numeric_features = ['amount', 'hour']
             
             # Tạo preprocessor
             preprocessor = ColumnTransformer(
@@ -252,7 +263,14 @@ class FraudDetectionSystem:
         
         try:
             # Chuẩn bị dữ liệu đầu vào
-            X = pd.DataFrame([transaction])
+            df = pd.DataFrame([transaction])
+            
+            # Chuyển đổi timestamp thành giờ
+            df['hour'] = pd.to_datetime(df['timestamp']).dt.hour
+            
+            # Chọn features
+            features = ['amount', 'hour']
+            X = df[features]
             
             # Thực hiện dự đoán
             if isinstance(self.model.named_steps['classifier'], RandomForestClassifier):
@@ -318,10 +336,10 @@ class FraudDetectionSystem:
             profile.avg_transaction_amount = sum(t.get('amount', 0) for t in transactions) / len(transactions)
             
             # Cập nhật typical_transaction_hours
-            hours = [t.get('timestamp', datetime.utcnow()).hour for t in transactions if 'timestamp' in t]
+            hours = [t.get('timestamp', datetime.now()).hour for t in transactions if 'timestamp' in t]
             profile.typical_transaction_hours = json.dumps(list(set(hours)))
         
-        profile.last_updated = datetime.utcnow()
+        profile.last_updated = datetime.now()
         db.commit()
     
     def analyze_transaction(self, db: Session, transaction_data: dict):
@@ -358,12 +376,12 @@ class FraudDetectionSystem:
             is_suspicious = final_risk_score >= self.thresholds['anomaly_score_threshold']
             
             # Tổng hợp lý do
-            reasons = [result['reason'] for result in results.values() if result['reason']]
+            suspicious_reasons = [result['reason'] for result in results.values() if result['reason']]
             
             return {
                 'is_suspicious': is_suspicious,
                 'risk_score': final_risk_score,
-                'reasons': reasons,
+                'reasons': suspicious_reasons,
                 'details': {
                     'rule_based_score': rules_risk_score,
                     'model_score': model_risk_score,
@@ -429,29 +447,172 @@ class FraudDetectionSystem:
             return False
 
     def process_transaction(self, db: Session, transaction_data: dict):
-        """Xử lý một giao dịch mới và lưu vào database"""
-        user_id = transaction_data.get('user_id')
-        
-        # Phân tích giao dịch
-        analysis_result = self.analyze_transaction(db, transaction_data)
-        
-        # Cập nhật transaction_data với kết quả phân tích
-        transaction_data.update({
-            'is_suspicious': analysis_result['is_suspicious'],
-            'risk_score': analysis_result['risk_score']
-        })
-        
-        # Gửi cảnh báo nếu giao dịch đáng ngờ
-        if analysis_result['is_suspicious']:
-            self.send_alert(db, user_id, analysis_result, transaction_data)
-        
-        # Cập nhật hồ sơ người dùng với giao dịch mới
-        # Chỉ cập nhật nếu giao dịch không đáng ngờ hoặc đã được xác nhận là hợp pháp
-        if not analysis_result['is_suspicious'] or transaction_data.get('verified', False):
-            self.update_user_profile(db, user_id, transaction_data)
-        
-        return analysis_result
+        """
+        Xử lý giao dịch mới và trả về kết quả phân tích
+        """
+        try:
+            # Lấy thông tin người dùng
+            user_id = transaction_data['user_id']
+            user_profile = self._get_user_profile(db, user_id)
+            
+            # Phân tích bằng AI
+            ai_analysis = self.analyze_with_ai(transaction_data, user_profile)
+            
+            # Phân tích bằng các quy tắc truyền thống
+            traditional_analysis = self.analyze_transaction(transaction_data, user_profile)
+            
+            # Kết hợp kết quả
+            is_suspicious = ai_analysis['is_suspicious'] or traditional_analysis['is_suspicious']
+            risk_score = max(
+                self._convert_risk_level_to_score(ai_analysis['risk_level']),
+                traditional_analysis['risk_score']
+            )
+            
+            # Tạo giao dịch mới
+            transaction = Transaction(
+                transaction_id=transaction_data.get('transaction_id', str(uuid.uuid4())),
+                user_id=user_id,
+                amount=transaction_data['amount'],
+                category=transaction_data.get('category', 'unknown'),
+                timestamp=transaction_data.get('timestamp', datetime.now()),
+                ip_address=transaction_data['ip_address'],
+                geolocation=transaction_data.get('geolocation', {}),
+                device_id=transaction_data.get('device_id', 'unknown'),
+                is_suspicious=is_suspicious,
+                risk_score=risk_score,
+                ai_analysis=ai_analysis['analysis'],
+                traditional_analysis=json.dumps(traditional_analysis)
+            )
+            
+            db.add(transaction)
+            db.commit()
+            
+            # Nếu giao dịch đáng ngờ, tạo cảnh báo
+            if is_suspicious:
+                self.send_alert(db, user_id, transaction_data, {
+                    'ai_analysis': ai_analysis,
+                    'traditional_analysis': traditional_analysis
+                })
+            
+            return {
+                'is_suspicious': is_suspicious,
+                'risk_score': risk_score,
+                'reasons': traditional_analysis.get('reasons', []) + [ai_analysis['analysis']],
+                'transaction_id': transaction.transaction_id
+            }
+            
+        except Exception as e:
+            logging.error(f"Error processing transaction: {str(e)}")
+            db.rollback()
+            raise
 
+    def _convert_risk_level_to_score(self, risk_level: str) -> float:
+        """
+        Chuyển đổi mức độ rủi ro thành điểm số
+        """
+        risk_scores = {
+            'low': 0.2,
+            'medium': 0.5,
+            'high': 0.8
+        }
+        return risk_scores.get(risk_level.lower(), 0.5)
+
+    def analyze_with_ai(self, transaction_data: Dict, user_profile: Optional[Dict] = None) -> Dict:
+        """
+        Phân tích giao dịch bằng OpenAI API
+        """
+        try:
+            client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+            
+            # Chuẩn bị dữ liệu cho prompt
+            transaction_info = {
+                'amount': transaction_data['amount'],
+                'category': transaction_data.get('category', 'unknown'),
+                'ip_address': transaction_data['ip_address'],
+                'device_id': transaction_data.get('device_id', 'unknown'),
+                'timestamp': transaction_data['timestamp'].isoformat() if isinstance(transaction_data['timestamp'], datetime) else transaction_data['timestamp']
+            }
+            
+            if user_profile:
+                profile_info = {
+                    'common_locations': user_profile.get('common_locations', []),
+                    'common_devices': user_profile.get('common_devices', []),
+                    'common_categories': user_profile.get('common_categories', []),
+                    'avg_transaction_amount': user_profile.get('avg_transaction_amount', 0),
+                    'typical_transaction_hours': user_profile.get('typical_transaction_hours', [])
+                }
+            else:
+                profile_info = {}
+            
+            # Tạo prompt cho OpenAI
+            prompt = f"""
+            Analyze this transaction for potential fraud:
+            
+            Transaction Details:
+            {json.dumps(transaction_info, indent=2)}
+            
+            User Profile (if available):
+            {json.dumps(profile_info, indent=2)}
+            
+            Please analyze this transaction and provide:
+            1. Risk level (low, medium, high)
+            2. Specific reasons for the risk level
+            3. Recommended actions
+            """
+            
+            # Gọi OpenAI API
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "You are a fraud detection expert. Analyze transactions for potential fraud."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.3
+            )
+            
+            # Phân tích kết quả
+            analysis = response.choices[0].message.content
+            
+            # Chuyển đổi kết quả thành định dạng phù hợp
+            risk_level = "high" if "high" in analysis.lower() else "medium" if "medium" in analysis.lower() else "low"
+            
+            return {
+                'risk_level': risk_level,
+                'analysis': analysis,
+                'is_suspicious': risk_level in ['medium', 'high']
+            }
+            
+        except Exception as e:
+            logging.error(f"Error in AI analysis: {str(e)}")
+            return {
+                'risk_level': 'unknown',
+                'analysis': str(e),
+                'is_suspicious': False
+            }
+
+    def _get_user_profile(self, db: Session, user_id: str) -> Optional[Dict]:
+        """
+        Lấy thông tin profile của user từ database
+        """
+        try:
+            # Lấy user profile từ database
+            profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
+            
+            if not profile:
+                return None
+                
+            # Chuyển đổi profile thành dictionary
+            return {
+                'common_locations': json.loads(profile.common_locations) if profile.common_locations else [],
+                'common_devices': json.loads(profile.common_devices) if profile.common_devices else [],
+                'common_categories': json.loads(profile.common_categories) if profile.common_categories else [],
+                'avg_transaction_amount': profile.avg_transaction_amount,
+                'typical_transaction_hours': json.loads(profile.typical_transaction_hours) if profile.typical_transaction_hours else []
+            }
+            
+        except Exception as e:
+            logging.error(f"Error getting user profile: {str(e)}")
+            return None
 
 # Ví dụ sử dụng hệ thống
 if __name__ == "__main__":
