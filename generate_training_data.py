@@ -216,9 +216,13 @@ if __name__ == "__main__":
     # Generate training data
     transactions = generate_training_data(1000)
     
-    # Save to JSON file
+    # Save to JSON file with the correct format for the API
+    data = {
+        "training_data": transactions
+    }
+    
     with open('training_data.json', 'w') as f:
-        json.dump(transactions, f, default=str, indent=2)
+        json.dump(data, f, default=str, indent=2)
     
     print(f"Generated {len(transactions)} transactions")
     print(f"Fraudulent transactions: {sum(1 for t in transactions if t['is_fraud'])}")
