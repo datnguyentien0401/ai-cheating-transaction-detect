@@ -54,15 +54,21 @@ class Transaction(Base):
     ip_address = Column(String(50))
     geolocation = Column(String(255))
     device_id = Column(String(100))
+    currency = Column(String(10), nullable=False, default='VND')
+    description = Column(String(255), nullable=True)
     is_suspicious = Column(Boolean, default=False)
     risk_score = Column(Float, default=0.0)
+    ai_analysis = Column(JSON, nullable=True)
+    traditional_analysis = Column(JSON, nullable=True)
     verified = Column(Boolean, default=False)
     is_fraud = Column(Boolean, default=False)
-    ai_analysis = Column(Text)  # Lưu kết quả phân tích từ OpenAI
-    traditional_analysis = Column(JSON)  # Lưu kết quả phân tích truyền thống
+    fraud_reasons = Column(JSON, nullable=True)  # List of reasons for fraud detection
     
     # Relationships
     user = relationship("User", back_populates="transactions")
+
+    def __repr__(self):
+        return f"<Transaction(transaction_id='{self.transaction_id}', user_id='{self.user_id}', amount={self.amount}, currency='{self.currency}', description='{self.description}', category='{self.category}', timestamp='{self.timestamp}', is_suspicious={self.is_suspicious}, risk_score={self.risk_score})>"
 
 class UserProfile(Base):
     """UserProfile model for storing user behavior patterns"""
@@ -72,6 +78,7 @@ class UserProfile(Base):
     common_locations = Column(JSON)  # List of common locations
     common_devices = Column(JSON)    # List of common devices
     common_categories = Column(JSON) # List of common transaction categories
+    common_ip_addresses = Column(JSON) # List of common ip addresses
     avg_transaction_amount = Column(Float, default=0.0)
     typical_transaction_hours = Column(JSON)  # List of hours when user typically transacts
     last_updated = Column(DateTime, default=datetime.now)
