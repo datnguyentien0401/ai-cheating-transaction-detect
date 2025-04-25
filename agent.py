@@ -4,7 +4,7 @@ from sklearn.ensemble import RandomForestClassifier, IsolationForest
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
-from datetime import datetime
+from datetime import datetime, timedelta
 import pickle
 import requests
 import logging
@@ -17,12 +17,122 @@ import uuid
 from typing import Dict, List, Optional, Tuple
 
 class FraudDetectionSystem:
+    # Class constants
+    FRAUD_DETECTION_PROMPT = """
+    Analyze this transaction for potential fraud. The process includes:
+
+    1. **Historical Data Modeling:** 
+       - Compile a list of past transactions with important information such as transaction time, location, transaction amount, transaction type, transaction frequency, and previous transaction contacts.
+
+    2. **Analyze the new transaction to determine fraud probability:**
+
+    * **Analysis based on historical data, account information, and unusual factors:**
+
+        * **Unusual Transaction Characteristics:**
+            * **Transaction Value:** Compare current transaction value with average and standard deviation of previous transactions (by product type, quantity). Identify transactions exceeding significant thresholds.
+            * **Transaction Type:** Identify transaction types different from the account's usual purchase history.
+            * **Products and Prices:** Analyze the rationality between products and prices. High-value product purchases (e.g., luxury items) may be more suspicious than essential items (e.g., food, daily necessities), especially if not consistent with shopping history.
+            * **Duplicate Transactions:** Duplicate or similar transactions within a short time period may indicate fraudulent behavior. However, if the quantity is small and value is low, it could be normal behavior. For example, buying a coffee and a pastry at the same time could be normal behavior.
+            
+        * **Suspicious Transaction Time and Location:**
+            * **Transaction Time:** Detect transactions occurring outside the user's usual transaction hours.
+            * **Transaction Location:** Identify transactions from locations different from familiar transaction locations.
+            * **IP Address and Geographic Location:** Compare the IP address used for the transaction with the user's usual geographic location. Alert transactions from countries or IP ranges with fraud history.
+        * **Unusual Behavior and Transaction Frequency:**
+            * **Transaction Behavior:** Compare current transaction attributes (value, location, time, device used) with account transaction history to detect notable differences.
+            * **Transaction Frequency:** Detect sudden increases in transaction quantity within a short time period, which could indicate testing behavior or automated attacks.
+        * **Suspicious Account Information Changes:**
+            * **Personal Information:** Monitor unusual changes in account information such as email address, phone number, shipping address, which could indicate account compromise.
+            * **Access Device:** Record and compare the device (device ID, operating system) used for transactions with the user's familiar devices.
+        * **Context and User Behavior Analysis:**
+            * **System Interaction:** Analyze user behavior on the website or application before making transactions (e.g., product review time, pages visited, mouse actions).
+            * **VPN/Proxy Usage:** Detect transactions made through VPN or proxy services, especially anonymous proxies or those from suspicious sources.
+            * **Continuous Incorrect Input:** Record the number of incorrect sensitive information entries (e.g., password, CVV code) before successful transaction, which could indicate guessing behavior or brute-force attacks.
+        * **External Data Sources:**
+            * **Blacklists:** Check transaction information (email, phone number, IP address, card number) against verified blacklists of fraudulent entities or activities.
+            * **Shared Information:** Leverage information and alerts about new fraud methods from anti-fraud organizations and security communities.
+        * **Comprehensive Analysis and Risk Assessment:**
+            * **Risk Modeling:** Apply machine learning and statistical models to combine all analysis factors and provide a comprehensive assessment of transaction fraud risk.
+            * **History and Behavior Comparison:** Compare current transaction with entire transaction history and user interaction behavior to detect unusual patterns and inconsistencies.
+            * **Continuous Learning:** The system should be designed to continuously monitor the results of marked transactions and adjust analysis criteria based on new fraud patterns.
+        * **Other Analysis Criteria:** (Add other specific criteria if applicable).
+
+    3. **Calculate Fraud Probability:**
+    * **Apply Analysis Algorithms:** Use analysis algorithms (e.g., rule-based, statistical, machine learning) to estimate the probability of a new transaction being fraudulent based on defined analysis criteria.
+    * **Criteria Weights:** Note that each analysis criterion may have different weights, reflecting its importance in fraud prediction. These weights can be adjusted based on model performance and in-depth analysis.
+
+    4. **Essential Purchases:** Transactions for essential items such as food, daily necessities, coffee, etc., may be considered with lower fraud probability compared to luxury or non-essential item purchases.
+
+    **Evaluation and Decision:**
+       - Provide final overall score as fraud_score indicating fraud suspicion. Summarize and make a decision about whether to proceed or stop the transaction.
+
+    Based on these criteria and ratios, the final score indicates the probability of this transaction being fraudulent. Recommend temporarily stopping the transaction for additional verification.
+
+    Please analyze the following transaction information:
+    - Account Information (JSON):
+      ```
+      {account_info}
+      ```
+    - Transaction History (JSON):
+      ```
+      {history_info}
+      ```
+    - New Transaction (JSON):
+      ```
+      {transaction_info}
+      ```
+    And return a response with the following criteria:
+     - In English and in JSON format.
+     - `fraud_score` will be equal to the average sum of all `fraud_score` values in `fraud_details` and the types in fraud_details must not be duplicates. 
+     - All data in the response must be related and consistent with each other, for example fraud_score will equal the average sum of all fraud_score values in fraud_details
+    Here is an example:
+    {{
+      "fraud_score": <number between 0-100>,
+      "fraud_decision": <true/false>,
+      "fraud_reason": "<detailed reason for the decision>",
+      "fraud_details": [
+        {{
+          "fraud_score": <number between 0-100>,
+          "type": "<check_type>",
+          "message": "<detailed message about this check>"
+        }}
+      ],
+      "fraud_suggestions": "<suggestions for handling the transaction>",
+      "fraud_alert": <true/false>,
+      "fraud_alert_message": "<alert message>",
+      "fraud_alert_details": "<detailed alert information>",
+      "fraud_alert_suggestions": "<suggestions for handling the alert>"
+    }}
+
+    Example response:
+    {{
+      "fraud_score": 60,
+      "fraud_decision": true,
+      "fraud_reason": "Transaction amount is relatively low but from an unusual device and the IP address does not match the usual patterns.",
+      "fraud_details": [
+        {{
+          "fraud_score": 60,
+          "type": "location_check",
+          "message": "In usual area"
+        }}
+      ],
+      "fraud_suggestions": "Contact user for confirmation and monitor future transactions from this device and IP address.",
+      "fraud_alert": true,
+      "fraud_alert_message": "Potential fraud activity detected.",
+      "fraud_alert_details": "Transaction conducted from an unrecognized device and IP address outside the usual patterns.",
+      "fraud_alert_suggestions": "Consider blocking this transaction until further verification."
+    }}
+    """
+
     def __init__(self):
         # Thiết lập logging
         logging.basicConfig(
             level=logging.INFO,
             format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-            filename='fraud_detection.log'
+            handlers=[
+                logging.FileHandler('fraud_detection.log'),
+                logging.StreamHandler()  # Thêm handler để log ra console
+            ]
         )
         self.logger = logging.getLogger('fraud_detection')
         
@@ -51,15 +161,40 @@ class FraudDetectionSystem:
         self.known_bad_ips = self._load_known_bad_ips()
     
     def _load_known_bad_ips(self):
-        """Tải danh sách IP đã biết là độc hại từ API bên ngoài"""
+        """Tải danh sách IP đã biết là độc hại từ API AbuseIPDB"""
         try:
-            # Đây là ví dụ, trong thực tế bạn sẽ kết nối với API cung cấp danh sách IP độc hại
-            response = requests.get("https://example.com/api/malicious-ips", timeout=5)
+            # Sử dụng API AbuseIPDB để lấy danh sách IP độc hại
+            # Bạn cần đăng ký tài khoản tại https://www.abuseipdb.com để lấy API key
+            api_key = os.getenv('OPENAI_API_KEY'),
+            headers = {
+                'Key': api_key,
+                'Accept': 'application/json',
+            }
+            
+            # Lấy danh sách blacklist IP có điểm tin cậy từ 90% trở lên trong 30 ngày qua
+            params = {
+                'confidenceMinimum': 90,
+                'limit': 10000  # Giới hạn số lượng IP trả về
+            }
+            
+            response = requests.get(
+                "https://api.abuseipdb.com/api/v2/blacklist",
+                headers=headers,
+                params=params,
+                timeout=10
+            )
+            
             if response.status_code == 200:
-                return set(response.json()['ips'])
-            return set()
-        except:
-            self.logger.warning("Không thể tải danh sách IP độc hại")
+                data = response.json()
+                # Trích xuất danh sách IP từ phản hồi
+                ip_list = [item['ipAddress'] for item in data.get('data', [])]
+                self.logger.info(f"Đã tải thành công {len(ip_list)} IP độc hại")
+                return set(ip_list)
+            else:
+                self.logger..error(f"Lỗi khi tải IP độc hại: {response.status_code} - {response.text}")
+                return set()
+        except Exception as e:
+            self.logger.warning(f"Không thể tải danh sách IP độc hại: {str(e)}")
             return set()
     
     def _get_user_location_history(self, db: Session, user_id: str):
@@ -69,15 +204,25 @@ class FraudDetectionSystem:
             return json.loads(user_profile.common_locations)
         return []
     
+    def _get_user_ip_address_history(self, db: Session, user_id: str):
+        """Lấy lịch sử vị trí của người dùng từ database"""
+        user_profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
+        if user_profile and user_profile.common_ip_addresses:
+            return json.loads(user_profile.common_ip_addresses)
+        return []
+    
     def _get_user_transaction_history(self, db: Session, user_id: str):
         """Lấy lịch sử giao dịch của người dùng từ database"""
         transactions = db.query(Transaction).filter(Transaction.user_id == user_id).all()
         return [{
             'amount': t.amount,
+            'currency': t.currency,
+            'description': t.description,
             'category': t.category,
             'timestamp': t.timestamp,
             'geolocation': t.geolocation,
-            'device_id': t.device_id
+            'device_id': t.device_id,
+            'ip_address': t.ip_address
         } for t in transactions]
     
     def _get_average_transaction_amount(self, db: Session, user_id: str):
@@ -127,23 +272,42 @@ class FraudDetectionSystem:
                 'common_devices': json.loads(profile.common_devices) if profile.common_devices else [],
                 'common_categories': json.loads(profile.common_categories) if profile.common_categories else [],
                 'avg_transaction_amount': profile.avg_transaction_amount,
-                'typical_transaction_hours': json.loads(profile.typical_transaction_hours) if profile.typical_transaction_hours else []
+                'typical_transaction_hours': json.loads(profile.typical_transaction_hours) if profile.typical_transaction_hours else [],
+                'transactions': self._get_user_transaction_history(db, user_id)
             }
             
         except Exception as e:
             logging.error(f"Error getting user profile: {str(e)}")
             return None
     
-    def _check_ip_location(self, db: Session, user_id, ip_address, geolocation):
-        """Kiểm tra vị trí IP có bất thường không"""
-        # Kiểm tra IP có trong danh sách đen không
-        if ip_address in self.known_bad_ips:
-            return {
-                'is_suspicious': True,
-                'reason': 'IP nằm trong danh sách IP độc hại đã biết',
-                'risk_score': 0.9
-            }
-        
+    def _check_ip_address(self, db: Session, user_id: str, ip_address: str) -> Dict:
+        """Kiểm tra địa chỉ IP có đáng ngờ không"""
+        try:
+            # Kiểm tra IP có trong danh sách đen không
+            if ip_address in self.known_bad_ips:
+                return {
+                    'is_suspicious': True,
+                    'reason': 'IP nằm trong danh sách IP độc hại đã biết',
+                    'risk_score': 0.9
+                }
+            
+            # Lấy user profile
+            common_ips = self._get_user_ip_address_history(db, user_id)
+            if ip_address not in common_ips:
+                return {
+                    'is_suspicious': True,
+                    'reason': f'IP mới: {ip_address} chưa từng xuất hiện trong lịch sử',
+                    'risk_score': 0.7
+                }
+            
+            return {'is_suspicious': False, 'reason': '', 'risk_score': 0.0}
+            
+        except Exception as e:
+            self.logger.error(f"Error checking IP address: {str(e)}")
+            return {'is_suspicious': False, 'reason': '', 'risk_score': 0.0}
+
+    def _check_location(self, db: Session, user_id, geolocation):
+        """Kiểm tra vị trí location có bất thường không"""
         # Kiểm tra vị trí có trong lịch sử không
         locations = self._get_user_location_history(db, user_id)
         if locations and geolocation not in locations:
@@ -226,6 +390,7 @@ class FraudDetectionSystem:
         
         return {'is_suspicious': False, 'reason': '', 'risk_score': 0.0}
     
+    
     def train_model(self, db: Session, transaction_data: list):
         """Huấn luyện mô hình phát hiện gian lận từ dữ liệu giao dịch trong database"""
         if len(transaction_data) < 10:
@@ -233,20 +398,25 @@ class FraudDetectionSystem:
             return False
         
         try:
+            self.logger.info("Bắt đầu huấn luyện mô hình với dữ liệu giao dịch.")
             # Chuẩn bị dữ liệu
             df = pd.DataFrame(transaction_data)
+            self.logger.info(f"Số lượng giao dịch: {len(df)}")
             
             # Chuyển đổi timestamp thành giờ
             df['hour'] = pd.to_datetime(df['timestamp']).dt.hour
             
-            # Tách features và target
-            features = ['amount', 'hour']
+            # Chọn features
+            features = ['amount', 'hour', 'currency', 'description', 'category', 'ip_address', 'geolocation', 'device_id']
             X = df[features]
             y = df['is_fraud'] if 'is_fraud' in df.columns else None
+            self.logger.info(f"Features được sử dụng: {features}")
             
             # Xác định các cột theo loại
-            categorical_features = X.select_dtypes(include=['object', 'category']).columns
+            categorical_features = ['currency', 'description', 'category', 'ip_address', 'geolocation', 'device_id']
             numeric_features = ['amount', 'hour']
+            self.logger.info(f"Các features số: {numeric_features}")
+            self.logger.info(f"Các features phân loại: {categorical_features}")
             
             # Tạo preprocessor
             preprocessor = ColumnTransformer(
@@ -257,6 +427,7 @@ class FraudDetectionSystem:
             
             # Huấn luyện mô hình
             if y is not None:
+                self.logger.info("Huấn luyện mô hình với Random Forest.")
                 # Supervised learning with Random Forest
                 self.model = Pipeline(steps=[
                     ('preprocessor', preprocessor),
@@ -264,6 +435,7 @@ class FraudDetectionSystem:
                 ])
                 self.model.fit(X, y)
             else:
+                self.logger.info("Huấn luyện mô hình với Isolation Forest.")
                 # Unsupervised learning with Isolation Forest
                 self.model = Pipeline(steps=[
                     ('preprocessor', preprocessor),
@@ -293,7 +465,7 @@ class FraudDetectionSystem:
             df['hour'] = pd.to_datetime(df['timestamp']).dt.hour
             
             # Chọn features
-            features = ['amount', 'hour']
+            features = ['amount', 'hour', 'currency', 'description', 'category', 'ip_address', 'geolocation', 'device_id']
             X = df[features]
             
             # Thực hiện dự đoán
@@ -323,6 +495,8 @@ class FraudDetectionSystem:
             transaction_id=transaction_data.get('transaction_id'),
             user_id=user_id,
             amount=transaction_data.get('amount', 0),
+            currency=transaction_data.get('currency', 'VND'),
+            description=transaction_data.get('description', ''),
             category=transaction_data.get('category'),
             timestamp=transaction_data.get('timestamp', datetime.utcnow()),
             ip_address=transaction_data.get('ip_address'),
@@ -356,6 +530,10 @@ class FraudDetectionSystem:
             categories = set(t.get('category') for t in transactions if t.get('category'))
             profile.common_categories = json.dumps(list(categories))
             
+            # Cập nhật ip_addresses
+            ip_addresses = set(t.get('ip_address') for t in transactions if t.get('ip_address'))
+            profile.common_ip_addresses = json.dumps(list(ip_addresses))
+                
             # Cập nhật avg_transaction_amount
             profile.avg_transaction_amount = sum(t.get('amount', 0) for t in transactions) / len(transactions)
             
@@ -367,20 +545,38 @@ class FraudDetectionSystem:
         db.commit()
     
     def analyze_transaction(self, db: Session, transaction_data: dict):
-        """Phân tích giao dịch và trả về kết quả"""
+        """
+        Analyze transaction using traditional rule-based methods
+        Returns:
+            Dict containing:
+            - fraud_score: float (0-100)
+            - is_suspicious: bool
+            - analysis_details: List[Dict] containing detailed analysis results
+            - reasons: List[str] containing reasons for the decision
+        """
+        self.logger.info(f"Starting transaction analysis")
+        
         try:
-            # Lấy thông tin giao dịch
+            self.logger.info(f"transaction_data: {transaction_data}")
+            # Get transaction information
             user_id = transaction_data['user_id']
+            self.logger.info(f"user_id: {user_id}")
+
             amount = transaction_data['amount']
+            currency = transaction_data.get('currency', 'VND')
             category = transaction_data.get('category', '')
             timestamp = transaction_data['timestamp']
             ip_address = transaction_data['ip_address']
             geolocation = transaction_data.get('geolocation', '')
             device_id = transaction_data.get('device_id', '')
             
-            # Thực hiện các kiểm tra dựa trên quy tắc
+            self.logger.info(f"Analyzing transaction for user {user_id}: amount={amount} {currency}, category={category}, timestamp={timestamp}")
+            self.logger.info(f"Location info: ip={ip_address}, geo={geolocation}, device={device_id}")
+            
+            # Perform rule-based checks
             results = {
-                'ip_location': self._check_ip_location(db, user_id, ip_address, geolocation),
+                'geolocation': self._check_location(db, user_id, geolocation),
+                'ip_address': self._check_ip_address(db, user_id, ip_address),
                 'amount': self._check_amount(db, user_id, amount),
                 'category': self._check_category(db, user_id, category),
                 'time': self._check_time(db, user_id, timestamp),
@@ -388,38 +584,76 @@ class FraudDetectionSystem:
                 'device': self._check_device(db, user_id, device_id)
             }
             
-            # Tính điểm rủi ro từ các quy tắc
+            self.logger.info(f"Rule check results: {results}")
+            
+            # Calculate risk score from rules
             risk_factors = [r['risk_score'] for r in results.values()]
             rules_risk_score = max(risk_factors) if risk_factors else 0
             
-            # Tính điểm rủi ro từ mô hình máy học
+            self.logger.info(f"Rules-based risk score: {rules_risk_score}")
+            
+            # Get risk score from machine learning model
             model_risk_score = self.predict_with_model(transaction_data)
             
-            # Kết hợp điểm rủi ro
+            self.logger.info(f"Model risk score: {model_risk_score}")
+            
+            # Combine risk scores
             final_risk_score = max(rules_risk_score, model_risk_score)
             is_suspicious = final_risk_score >= self.thresholds['anomaly_score_threshold']
             
-            # Tổng hợp lý do
+            # Collect reasons
             suspicious_reasons = [result['reason'] for result in results.values() if result['reason']]
+            suspicious_reasons_str = ', '.join(suspicious_reasons) if suspicious_reasons else ''
+            
+            # Prepare analysis details
+            analysis_details = []
+            for check_type, result in results.items():
+                if result['is_suspicious']:
+                    analysis_details.append({
+                        'type': check_type,
+                        'fraud_score': result['risk_score'] * 100,  # Convert to 0-100 scale
+                        'message': result['reason']
+                    })
+            
+            # Add model prediction to analysis details
+            if model_risk_score > 0:
+                analysis_details.append({
+                    'type': 'ml_model',
+                    'fraud_score': model_risk_score * 100,  # Convert to 0-100 scale
+                    'message': 'Machine learning model detected potential fraud'
+                })
+            
+            self.logger.info(f"Final analysis: score={final_risk_score}, suspicious={is_suspicious}")
+            self.logger.info(f"Suspicious reasons: {suspicious_reasons}")
             
             return {
+                'fraud_score': final_risk_score * 100,  # Convert to 0-100 scale
                 'is_suspicious': is_suspicious,
-                'risk_score': final_risk_score,
+                'analysis_details': analysis_details,
                 'reasons': suspicious_reasons,
-                'details': {
-                    'rule_based_score': rules_risk_score,
-                    'model_score': model_risk_score,
-                    'checks': results
+                'suggestions': 'Consider additional verification for high-risk transactions' if is_suspicious else '',
+                'alert': {
+                    'is_alert': is_suspicious,
+                    'message': 'Suspicious transaction detected' if is_suspicious else '',
+                    'details': suspicious_reasons_str,
+                    'suggestions': 'Verify transaction with user' if is_suspicious else ''
                 }
             }
             
         except Exception as e:
-            self.logger.error(f"Lỗi khi phân tích giao dịch: {str(e)}")
+            self.logger.error(f"Error analyzing transaction: {str(e)}")
             return {
-                'is_suspicious': True,
-                'risk_score': 1.0,
-                'reasons': ['Lỗi khi phân tích giao dịch'],
-                'details': {}
+                'fraud_score': 0,
+                'is_suspicious': False,
+                'analysis_details': [],
+                'reasons': [f'Error in transaction analysis: {str(e)}'],
+                'suggestions': '',
+                'alert': {
+                    'is_alert': False,
+                    'message': '',
+                    'details': '',
+                    'suggestions': ''
+                }
             }
     
     def send_alert(self, db: Session, user_id: str, analysis_result, transaction_data):
@@ -437,6 +671,8 @@ class FraudDetectionSystem:
                 'reasons': analysis_result['reasons'],
                 'transaction_details': {
                     'amount': transaction_data.get('amount', 0),
+                    'currency': transaction_data.get('currency', 'VND'),
+                    'description': transaction_data.get('description', ''),
                     'category': transaction_data.get('category', ''),
                     'location': transaction_data.get('geolocation', ''),
                     'time': transaction_data.get('timestamp', datetime.now()).isoformat()
@@ -470,148 +706,275 @@ class FraudDetectionSystem:
             self.logger.error(f"Lỗi khi gửi cảnh báo: {str(e)}")
             return False
 
-    def process_transaction(self, db: Session, transaction_data: dict):
+    def process_transaction(self, db: Session, transaction_data: dict) -> dict:
         """
-        Xử lý giao dịch mới và trả về kết quả phân tích
+        Process a new transaction and return analysis results
+        Returns:
+            Dict containing combined analysis results from both AI and traditional methods
         """
         try:
-            # Lấy thông tin người dùng
+            # Get user information
             user_id = transaction_data['user_id']
+            self.logger.info(f"Bắt đầu xử lý giao dịch cho user {user_id}")
+            self.logger.info(f"Dữ liệu giao dịch: {json.dumps(transaction_data, indent=2, default=str)}")
+            
             user_profile = self._get_user_profile(db, user_id)
+            self.logger.info(f"Processing transaction for user {user_id}")
             
-            # Phân tích bằng AI
+            # Perform AI analysis
             ai_analysis = self.analyze_with_ai(transaction_data, user_profile)
+            self.logger.info(f"AI analysis completed: {json.dumps(ai_analysis, indent=2)}")
             
-            # Phân tích bằng các quy tắc truyền thống
-            traditional_analysis = self.analyze_transaction(transaction_data, user_profile)
+            # Perform traditional analysis
+            traditional_analysis = self.analyze_transaction(db, transaction_data)
+            self.logger.info(f"Traditional analysis completed: {json.dumps(traditional_analysis, indent=2)}")
             
-            # Kết hợp kết quả
-            is_suspicious = ai_analysis['is_suspicious'] or traditional_analysis['is_suspicious']
-            risk_score = max(
-                self._convert_risk_level_to_score(ai_analysis['risk_level']),
-                traditional_analysis['risk_score']
-            )
+            # Combine results
+            # Use weighted average for fraud score (60% AI, 40% traditional)
+            combined_fraud_score = (ai_analysis.get('fraud_score', 0) * 0.6) + (traditional_analysis.get('fraud_score', 0) * 0.4)
+            self.logger.info(f"Điểm gian lận kết hợp: {combined_fraud_score:.2f}")
             
-            # Tạo giao dịch mới
+            # Transaction is suspicious if either method flags it
+            is_suspicious = ai_analysis.get('is_suspicious', False) or traditional_analysis.get('is_suspicious', False)
+            self.logger.info(f"Giao dịch đáng ngờ: {is_suspicious}")
+            
+            # Combine analysis details
+            combined_details = []
+            
+            # Add AI analysis details
+            for detail in ai_analysis.get('analysis_details', []):
+                detail['source'] = 'ai'
+                combined_details.append(detail)
+            
+            # Add traditional analysis details
+            for detail in traditional_analysis.get('analysis_details', []):
+                detail['source'] = 'traditional'
+                combined_details.append(detail)
+            
+            # Sort details by fraud score
+            combined_details.sort(key=lambda x: x.get('fraud_score', 0), reverse=True)
+            self.logger.info(f"Số lượng chi tiết phân tích: {len(combined_details)}")
+            
+            # Combine reasons
+            combined_reasons = list(set(ai_analysis.get('reasons', []) + traditional_analysis.get('reasons', [])))
+            self.logger.info(f"Lý do đáng ngờ: {combined_reasons}")
+            
+            # Create new transaction record
             transaction = Transaction(
                 transaction_id=transaction_data.get('transaction_id', str(uuid.uuid4())),
                 user_id=user_id,
                 amount=transaction_data['amount'],
+                currency=transaction_data.get('currency', 'VND'),
+                description=transaction_data.get('description', ''),
                 category=transaction_data.get('category', 'unknown'),
                 timestamp=transaction_data.get('timestamp', datetime.now()),
                 ip_address=transaction_data['ip_address'],
                 geolocation=transaction_data.get('geolocation', {}),
                 device_id=transaction_data.get('device_id', 'unknown'),
                 is_suspicious=is_suspicious,
-                risk_score=risk_score,
-                ai_analysis=ai_analysis['analysis'],
-                traditional_analysis=json.dumps(traditional_analysis)
+                risk_score=combined_fraud_score,
+                ai_analysis=json.dumps(ai_analysis),
+                traditional_analysis=json.dumps(traditional_analysis),
+                fraud_reasons=combined_reasons
             )
             
             db.add(transaction)
             db.commit()
+            self.logger.info(f"Đã lưu giao dịch vào database với ID: {transaction.transaction_id}")
             
-            # Nếu giao dịch đáng ngờ, tạo cảnh báo
+            # Create alert if transaction is suspicious
             if is_suspicious:
-                self.send_alert(db, user_id, transaction_data, {
-                    'ai_analysis': ai_analysis,
-                    'traditional_analysis': traditional_analysis
-                })
+                self.logger.info("Giao dịch đáng ngờ, tạo cảnh báo")
+                # self.send_alert(db, user_id, {
+                #     'risk_score': combined_fraud_score,
+                #     'reasons': combined_reasons
+                # }, transaction_data)
             
-            return {
+            result = {
+                'fraud_score': combined_fraud_score,
                 'is_suspicious': is_suspicious,
-                'risk_score': risk_score,
-                'reasons': traditional_analysis.get('reasons', []) + [ai_analysis['analysis']],
-                'transaction_id': transaction.transaction_id
+                'analysis_details': combined_details,
+                'reasons': combined_reasons,
+                'suggestions': ai_analysis.get('suggestions', '') or traditional_analysis.get('suggestions', ''),
+                'alert': {
+                    'is_alert': is_suspicious,
+                    'message': 'Suspicious transaction detected by multiple methods' if is_suspicious else '',
+                    'details': {
+                        'ai_analysis': ai_analysis.get('alert', {}),
+                        'traditional_analysis': traditional_analysis.get('alert', {})
+                    },
+                    'suggestions': 'Verify transaction with user and consider additional security measures' if is_suspicious else ''
+                }
             }
             
+            self.logger.info("Hoàn thành xử lý giao dịch")
+            return result
+            
         except Exception as e:
-            logging.error(f"Error processing transaction: {str(e)}")
+            self.logger.error(f"Error processing transaction: {str(e)}")
             db.rollback()
-            raise
-
-    def _convert_risk_level_to_score(self, risk_level: str) -> float:
-        """
-        Chuyển đổi mức độ rủi ro thành điểm số
-        """
-        risk_scores = {
-            'low': 0.2,
-            'medium': 0.5,
-            'high': 0.8
-        }
-        return risk_scores.get(risk_level.lower(), 0.5)
+            return {
+                'fraud_score': 0,
+                'is_suspicious': False,
+                'analysis_details': [],
+                'reasons': [f'Error processing transaction: {str(e)}'],
+                'suggestions': '',
+                'alert': {
+                    'is_alert': False,
+                    'message': '',
+                    'details': '',
+                    'suggestions': ''
+                }
+            }
 
     def analyze_with_ai(self, transaction_data: Dict, user_profile: Optional[Dict] = None) -> Dict:
         """
-        Phân tích giao dịch bằng OpenAI API
+        Analyze transaction using OpenAI API
+        Returns:
+            Dict containing:
+            - fraud_score: float (0-100)
+            - is_suspicious: bool
+            - analysis_details: Dict containing detailed analysis results
+            - reasons: List[str] containing reasons for the decision
         """
         try:
-            client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+            logging.info("Starting AI analysis...")
+            logging.info(f"OpenAI Configuration - Base URL: {os.getenv('OPENAI_BASE_URL')}, Model: {os.getenv('OPENAI_MODEL')}")
             
-            # Chuẩn bị dữ liệu cho prompt
+            client = OpenAI(
+                api_key=os.getenv('OPENAI_API_KEY'),
+                base_url=os.getenv('OPENAI_BASE_URL')
+            )
+            logging.info("OpenAI client initialized successfully")
+            
+            # Prepare transaction data
             transaction_info = {
                 'amount': transaction_data['amount'],
+                'currency': transaction_data.get('currency', 'VND'),
+                'description': transaction_data.get('description', ''),
                 'category': transaction_data.get('category', 'unknown'),
                 'ip_address': transaction_data['ip_address'],
                 'device_id': transaction_data.get('device_id', 'unknown'),
+                'geolocation': transaction_data.get('geolocation', 'unknown'),
                 'timestamp': transaction_data['timestamp'].isoformat() if isinstance(transaction_data['timestamp'], datetime) else transaction_data['timestamp']
             }
             
-            if user_profile:
-                profile_info = {
-                    'common_locations': user_profile.get('common_locations', []),
-                    'common_devices': user_profile.get('common_devices', []),
-                    'common_categories': user_profile.get('common_categories', []),
-                    'avg_transaction_amount': user_profile.get('avg_transaction_amount', 0),
-                    'typical_transaction_hours': user_profile.get('typical_transaction_hours', [])
-                }
-            else:
-                profile_info = {}
+            # Prepare account info
+            account_info = {
+                'user_id': transaction_data['user_id'],
+                'profile': user_profile if user_profile else {}
+            }
             
-            # Tạo prompt cho OpenAI
-            prompt = f"""
-            Analyze this transaction for potential fraud:
+            # Prepare transaction history
+            history_info = []
+            if user_profile and 'transactions' in user_profile:
+                history_info = user_profile['transactions']
             
-            Transaction Details:
-            {json.dumps(transaction_info, indent=2)}
+            logging.info(f"Transaction info prepared: {json.dumps(transaction_info, indent=2)}")
+            logging.info(f"Account info prepared: {json.dumps(account_info, indent=2)}")
+            logging.info(f"History info prepared: {json.dumps(history_info, indent=2)}")
             
-            User Profile (if available):
-            {json.dumps(profile_info, indent=2)}
-            
-            Please analyze this transaction and provide:
-            1. Risk level (low, medium, high)
-            2. Specific reasons for the risk level
-            3. Recommended actions
-            """
-            
-            # Gọi OpenAI API
-            response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": "You are a fraud detection expert. Analyze transactions for potential fraud."},
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.3
+            # Format prompt with actual data
+            prompt = self.FRAUD_DETECTION_PROMPT.format(
+                account_info=json.dumps(account_info, indent=2),
+                history_info=json.dumps(history_info, indent=2),
+                transaction_info=json.dumps(transaction_info, indent=2)
             )
             
-            # Phân tích kết quả
-            analysis = response.choices[0].message.content
+            logging.info("Prompt prepared successfully")
             
-            # Chuyển đổi kết quả thành định dạng phù hợp
-            risk_level = "high" if "high" in analysis.lower() else "medium" if "medium" in analysis.lower() else "low"
+            # Call OpenAI API
+            logging.info("Calling OpenAI API...")
+            try:
+                response = client.chat.completions.create(
+                    model=os.getenv('OPENAI_MODEL', 'gpt-4'),
+                    messages=[
+                        {"role": "system", "content": "You are a financial fraud detection system. Your task is to analyze user financial transactions based on transaction history and the latest transaction to determine if the new transaction is likely fraudulent. You must respond with valid JSON only, no additional text."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=0.1
+                )
+                logging.info("OpenAI API call successful")
+                logging.info(f"Raw API response: {response}")
+            except Exception as api_error:
+                logging.error(f"OpenAI API call failed: {str(api_error)}")
+                logging.error(f"API Error details: {type(api_error).__name__}")
+                raise api_error
+            
+            # Parse results
+            analysis_text = response.choices[0].message.content.strip()
+            logging.info(f"Raw AI Analysis text: {analysis_text}")
+            
+            # Clean the response text
+            analysis_text = analysis_text.strip()
+            if not analysis_text.startswith('{'):
+                # Try to find the first occurrence of a JSON object
+                import re
+                json_match = re.search(r'\{.*\}', analysis_text, re.DOTALL)
+                if json_match:
+                    analysis_text = json_match.group(0)
+                else:
+                    raise ValueError("No valid JSON found in the response")
+            
+            # Parse the JSON
+            try:
+                analysis_result = json.loads(analysis_text)
+            except json.JSONDecodeError as e:
+                logging.error(f"JSON parsing error: {str(e)}")
+                logging.error(f"Problematic text: {analysis_text}")
+                raise
+            
+            logging.info(f"Parsed analysis result: {json.dumps(analysis_result, indent=2)}")
+            
+            # Validate required fields
+            required_fields = ['fraud_score', 'fraud_decision', 'fraud_reason', 'fraud_details']
+            for field in required_fields:
+                if field not in analysis_result:
+                    raise ValueError(f"Missing required field: {field}")
+            
+            # Check data consistency
+            total_score = sum(item.get('fraud_score', 0) for item in analysis_result.get('fraud_details', []))
+            if abs(total_score - analysis_result.get('fraud_score', 0)) > 0.01:  # Allow small rounding errors
+                logging.warning(f"Fraud score mismatch: calculated={total_score}, provided={analysis_result.get('fraud_score', 0)}")
+                analysis_result['fraud_score'] = total_score
+            
+            # Check for duplicate types
+            check_types = [item.get('type') for item in analysis_result.get('fraud_details', [])]
+            if len(check_types) != len(set(check_types)):
+                logging.warning("Duplicate check types found in fraud_details")
             
             return {
-                'risk_level': risk_level,
-                'analysis': analysis,
-                'is_suspicious': risk_level in ['medium', 'high']
+                'fraud_score': analysis_result.get('fraud_score', 0),
+                'is_suspicious': analysis_result.get('fraud_decision', False),
+                'analysis_details': analysis_result.get('fraud_details', []),
+                'reasons': [analysis_result.get('fraud_reason', '')] + [detail.get('message', '') for detail in analysis_result.get('fraud_details', []) if detail.get('message')],
+                'suggestions': analysis_result.get('fraud_suggestions', ''),
+                'alert': {
+                    'is_alert': analysis_result.get('fraud_alert', False),
+                    'message': analysis_result.get('fraud_alert_message', ''),
+                    'details': analysis_result.get('fraud_alert_details', ''),
+                    'suggestions': analysis_result.get('fraud_alert_suggestions', '')
+                }
             }
             
         except Exception as e:
             logging.error(f"Error in AI analysis: {str(e)}")
+            logging.error(f"Error type: {type(e).__name__}")
+            logging.error(f"Error details: {str(e)}")
+            if hasattr(e, 'response'):
+                logging.error(f"API Response: {e.response}")
             return {
-                'risk_level': 'unknown',
-                'analysis': str(e),
-                'is_suspicious': False
+                'fraud_score': 0,
+                'is_suspicious': False,
+                'analysis_details': [],
+                'reasons': [f'Error in AI analysis: {str(e)}'],
+                'suggestions': '',
+                'alert': {
+                    'is_alert': False,
+                    'message': '',
+                    'details': '',
+                    'suggestions': ''
+                }
             }
 
 # Ví dụ sử dụng hệ thống
@@ -619,26 +982,40 @@ if __name__ == "__main__":
     # Khởi tạo hệ thống
     fraud_system = FraudDetectionSystem()
     
-    # Ví dụ một giao dịch
-    example_transaction = {
-        'user_id': '12345',
-        'ip_address': '192.168.1.1',
-        'geolocation': 'Vietnam',
-        'amount': 2000000,
-        'category': 'Electronics',
-        'timestamp': datetime.now(),
-        'device_id': 'mobile-android-12345',
-        'transaction_id': 'TX-98765',
-    }
+    # Khởi tạo database
+    engine = create_engine('postgresql://postgres:postgres@localhost:5432/fraud_detection')
+    Base.metadata.create_all(engine)
+    Session = sessionmaker(bind=engine)
+    db = Session()
     
-    # Xử lý giao dịch
-    result = fraud_system.process_transaction(example_transaction)
-    
-    # In kết quả
-    print("Kết quả phân tích:")
-    print(f"Đáng ngờ: {result['is_suspicious']}")
-    print(f"Điểm rủi ro: {result['risk_score']:.2f}")
-    if result['reasons']:
-        print("Lý do:")
-        for reason in result['reasons']:
-            print(f"- {reason}")
+    try:
+        # Ví dụ một giao dịch
+        example_transaction = {
+            'user_id': '12345',
+            'ip_address': '192.168.1.1',
+            'geolocation': 'Vietnam',
+            'amount': 2000000,
+            'category': 'Electronics',
+            'timestamp': datetime.now(),
+            'device_id': 'mobile-android-12345',
+            'transaction_id': 'TX-98765',
+            'currency': 'VND',
+            'description': 'Purchase of a new laptop'
+        }
+        
+        # Xử lý giao dịch
+        result = fraud_system.process_transaction(db, example_transaction)
+        
+        # In kết quả
+        print("Kết quả phân tích:")
+        print(f"Đáng ngờ: {result['is_suspicious']}")
+        print(f"Điểm rủi ro: {result['fraud_score']:.2f}")
+        if result['reasons']:
+            print("Lý do:")
+            for reason in result['reasons']:
+                print(f"- {reason}")
+                
+    except Exception as e:
+        print(f"Lỗi khi xử lý giao dịch: {str(e)}")
+    finally:
+        db.close()

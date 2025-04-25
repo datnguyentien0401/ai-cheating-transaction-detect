@@ -20,7 +20,10 @@ CORS(app)  # Cho phép cross-origin requests
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    filename='api.log'
+    handlers=[
+        logging.FileHandler('api.log'),
+        logging.StreamHandler()  # Thêm handler để log ra console
+    ]
 )
 logger = logging.getLogger('fraud_api')
 
@@ -40,11 +43,13 @@ def process_transaction():
         
         # Get transaction data from request
         transaction_data = request.json
+        logger.info(f"Received transaction data: {json.dumps(transaction_data, indent=2, default=str)}")
         
         # Kiểm tra dữ liệu đầu vào
         required_fields = ['user_id', 'amount', 'ip_address']
         for field in required_fields:
             if field not in transaction_data:
+                logger.error(f"Missing required field: {field}")
                 return jsonify({
                     'status': 'error',
                     'message': f'Missing required field: {field}'
@@ -61,25 +66,23 @@ def process_transaction():
         if 'transaction_id' not in transaction_data:
             transaction_data['transaction_id'] = str(uuid.uuid4())
 
+        logger.info(f"Processing transaction with ID: {transaction_data['transaction_id']}")
         analysis_result = fraud_system.process_transaction(db, transaction_data)
+        logger.info(f"Analysis result: {json.dumps(analysis_result, indent=2, default=str)}")
         
         # Trả về kết quả
         response = {
             'status': 'success',
-            'transaction_id': transaction_data.get('transaction_id'),
-            'is_suspicious': analysis_result['is_suspicious'],
-            'risk_score': analysis_result['risk_score'],
-            'reasons': analysis_result['reasons'] if analysis_result['is_suspicious'] else [],
-            'timestamp': datetime.now().isoformat()
+            'data': analysis_result
         }
         
         # Log response
-        logger.info(f"Transaction processed: {response}")
+        logger.info(f"Transaction processed: {json.dumps(response, indent=2)}")
         
         return jsonify(response), 200
         
     except Exception as e:
-        logger.error(f"Error processing transaction: {str(e)}")
+        logger.error(f"Error processing transaction: {str(e)}", exc_info=True)
         return jsonify({
             'status': 'error',
             'message': 'Server error while processing transaction',
@@ -97,7 +100,7 @@ def train_model():
         if not training_data or len(training_data) < 10:
             return jsonify({
                 'status': 'error',
-                'message': 'Not enough training data provided'
+                'message': 'Training data must be a list with at least 10 transactions'
             }), 400
         
         # Get database session
@@ -152,7 +155,12 @@ def verify_transaction():
         
         # Update transaction verification status
         transaction.verified = True
-        transaction.is_fraud = not is_legitimate
+        if is_legitimate:
+            transaction.is_suspicious = False
+            transaction.is_fraud = False
+        else:
+            transaction.is_suspicious = True
+            transaction.is_fraud = True
         
         # If transaction is legitimate, update user profile
         if is_legitimate:
@@ -161,15 +169,16 @@ def verify_transaction():
                 'transaction_id': transaction.transaction_id,
                 'user_id': transaction.user_id,
                 'amount': transaction.amount,
+                'currency': transaction.currency,
+                'description': transaction.description,
                 'category': transaction.category,
                 'timestamp': transaction.timestamp,
                 'ip_address': transaction.ip_address,
                 'geolocation': transaction.geolocation,
                 'device_id': transaction.device_id,
-                'is_suspicious': transaction.is_suspicious,
-                'risk_score': transaction.risk_score,
-                'verified': True,
-                'is_fraud': False
+                'is_suspicious': False,  # Giao dịch hợp lệ
+                'is_fraud': False,      # Không phải gian lận
+                'verified': True
             }
             
             # Update user profile with verified transaction
