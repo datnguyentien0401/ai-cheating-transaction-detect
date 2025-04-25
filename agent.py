@@ -83,28 +83,16 @@ class FraudDetectionSystem:
       ```
     And return a response with the following criteria:
      - In English and in JSON format.
-     - `fraud_score` will be equal to the average sum of all `fraud_score` values in `fraud_details` and the types in fraud_details must not be duplicates. 
-     - All data in the response must be related and consistent with each other, for example fraud_score will equal the average sum of all fraud_score values in fraud_details
+     - `fraud_score` will be equal to the average of all `fraud_score` values in `fraud_details`. For example, if fraud_details contains:
+       [
+         {{"fraud_score": 60, "type": "location_check"}},
+         {{"fraud_score": 40, "type": "amount_check"}},
+         {{"fraud_score": 80, "type": "device_check"}}
+       ]
+       Then the final fraud_score will be (60 + 40 + 80) / 3 = 60
+     - All data in the response must be related and consistent with each other
+     - The types in fraud_details must not be duplicates
     Here is an example:
-    {{
-      "fraud_score": <number between 0-100>,
-      "fraud_decision": <true/false>,
-      "fraud_reason": "<detailed reason for the decision>",
-      "fraud_details": [
-        {{
-          "fraud_score": <number between 0-100>,
-          "type": "<check_type>",
-          "message": "<detailed message about this check>"
-        }}
-      ],
-      "fraud_suggestions": "<suggestions for handling the transaction>",
-      "fraud_alert": <true/false>,
-      "fraud_alert_message": "<alert message>",
-      "fraud_alert_details": "<detailed alert information>",
-      "fraud_alert_suggestions": "<suggestions for handling the alert>"
-    }}
-
-    Example response:
     {{
       "fraud_score": 60,
       "fraud_decision": true,
@@ -114,6 +102,16 @@ class FraudDetectionSystem:
           "fraud_score": 60,
           "type": "location_check",
           "message": "In usual area"
+        }},
+        {{
+          "fraud_score": 40,
+          "type": "amount_check",
+          "message": "Amount within normal range"
+        }},
+        {{
+          "fraud_score": 80,
+          "type": "device_check",
+          "message": "New device detected"
         }}
       ],
       "fraud_suggestions": "Contact user for confirmation and monitor future transactions from this device and IP address.",

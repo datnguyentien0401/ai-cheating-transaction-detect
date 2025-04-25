@@ -156,10 +156,8 @@ def verify_transaction():
         # Update transaction verification status
         transaction.verified = True
         if is_legitimate:
-            transaction.is_suspicious = False
             transaction.is_fraud = False
         else:
-            transaction.is_suspicious = True
             transaction.is_fraud = True
         
         # If transaction is legitimate, update user profile
