@@ -15,6 +15,21 @@ CREATE TABLE IF NOT EXISTS users (
 -- Create transactions table
 CREATE TABLE IF NOT EXISTS transactions (
     transaction_id VARCHAR(50) PRIMARY KEY,
+    user_id VARCHAR(50) NOT NULL,
+    amount FLOAT NOT NULL,
+    currency VARCHAR(10) NOT NULL DEFAULT 'VND',
+    description VARCHAR(255),
+    category VARCHAR(100),
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    ip_address VARCHAR(50),
+    geolocation VARCHAR(255),
+    device_id VARCHAR(100),
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+
+-- Create transaction_analyses table
+CREATE TABLE IF NOT EXISTS transaction_analyses (
+    transaction_id VARCHAR(50) PRIMARY KEY,
     user_id VARCHAR(50),
     amount DECIMAL(15,2) NOT NULL,
     currency VARCHAR(10) NOT NULL DEFAULT 'VND' COMMENT 'Currency of the transaction (e.g., VND, USD, EUR)',
@@ -56,7 +71,6 @@ CREATE TABLE IF NOT EXISTS alerts (
     reasons JSON,
     transaction_id VARCHAR(50),
     transaction_details JSON,
-    status VARCHAR(20) DEFAULT 'new',
     fraud_reasons JSON,
     FOREIGN KEY (user_id) REFERENCES users(user_id),
     FOREIGN KEY (transaction_id) REFERENCES transactions(transaction_id)

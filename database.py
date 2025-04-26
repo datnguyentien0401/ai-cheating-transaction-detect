@@ -39,12 +39,34 @@ class User(Base):
 
     # Relationships
     transactions = relationship("Transaction", back_populates="user")
+    transaction_analyses = relationship("TransactionAnalysis", back_populates="user")
     profile = relationship("UserProfile", back_populates="user", uselist=False)
     alerts = relationship("Alert", back_populates="user")
 
 class Transaction(Base):
-    """Transaction model for storing transaction data"""
+    """Transaction model for storing basic transaction data"""
     __tablename__ = "transactions"
+
+    transaction_id = Column(String(50), primary_key=True)
+    user_id = Column(String(50), ForeignKey('users.user_id'))
+    amount = Column(Float)
+    currency = Column(String(10), nullable=False, default='VND')
+    description = Column(String(255), nullable=True)
+    category = Column(String(100))
+    timestamp = Column(DateTime, default=datetime.now)
+    ip_address = Column(String(50))
+    geolocation = Column(String(255))
+    device_id = Column(String(100))
+    
+    # Relationships
+    user = relationship("User", back_populates="transactions")
+
+    def __repr__(self):
+        return f"<Transaction(transaction_id='{self.transaction_id}', user_id='{self.user_id}', amount={self.amount}, currency='{self.currency}', description='{self.description}', category='{self.category}', timestamp='{self.timestamp}')>"
+
+class TransactionAnalysis(Base):
+    """Transaction analysis model for storing transaction data and fraud detection results"""
+    __tablename__ = "transaction_analyses"
 
     transaction_id = Column(String(50), primary_key=True)
     user_id = Column(String(50), ForeignKey('users.user_id'))
@@ -65,10 +87,10 @@ class Transaction(Base):
     fraud_reasons = Column(JSON, nullable=True)  # List of reasons for fraud detection
     
     # Relationships
-    user = relationship("User", back_populates="transactions")
+    user = relationship("User", back_populates="transaction_analyses")
 
     def __repr__(self):
-        return f"<Transaction(transaction_id='{self.transaction_id}', user_id='{self.user_id}', amount={self.amount}, currency='{self.currency}', description='{self.description}', category='{self.category}', timestamp='{self.timestamp}', is_suspicious={self.is_suspicious}, risk_score={self.risk_score})>"
+        return f"<TransactionAnalysis(transaction_id='{self.transaction_id}', user_id='{self.user_id}', amount={self.amount}, currency='{self.currency}', description='{self.description}', category='{self.category}', timestamp='{self.timestamp}', is_suspicious={self.is_suspicious}, risk_score={self.risk_score})>"
 
 class UserProfile(Base):
     """UserProfile model for storing user behavior patterns"""
@@ -95,7 +117,7 @@ class Alert(Base):
     timestamp = Column(DateTime, default=datetime.now)
     risk_score = Column(Float)
     reasons = Column(JSON)  # List of reasons for alert
-    transaction_id = Column(String(50), ForeignKey('transactions.transaction_id'))
+    transaction_id = Column(String(50), ForeignKey('transaction_analyses.transaction_id'))
     transaction_details = Column(JSON)
     status = Column(String(20), default='new')  # new, reviewed, resolved, false_positive
     

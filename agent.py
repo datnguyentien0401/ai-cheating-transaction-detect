@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 import pickle
 import requests
 import logging
-from database import get_db, User, Transaction, UserProfile, Alert
+from database import get_db, User, Transaction,TransactionAnalysis, UserProfile, Alert
 from sqlalchemy.orm import Session
 import json
 import os
@@ -143,8 +143,8 @@ class FraudDetectionSystem:
             else:
                 self.logger.warning(f"Model file not found at {model_path}")
                 raise FileNotFoundError("Model file not found")
-            self.scaler = pickle.load(open('scaler.pkl', 'rb'))
-            self.encoder = pickle.load(open('encoder.pkl', 'rb'))
+            # self.scaler = pickle.load(open('scaler.pkl', 'rb'))
+            # self.encoder = pickle.load(open('encoder.pkl', 'rb'))
             self.logger.info("Đã tải mô hình phát hiện gian lận từ file")
         except:
             self.logger.info("Khởi tạo mô hình mới")
@@ -212,13 +212,16 @@ class FraudDetectionSystem:
         """Lấy lịch sử vị trí của người dùng từ database"""
         try:
             self.logger.info(f"Lấy lịch sử IP của user {user_id}")
+            
             user_profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
             self.logger.info(f"User profile: {user_profile.common_ip_addresses}")
+            
             if user_profile and user_profile.common_ip_addresses:
                 ip_addresses = user_profile.common_ip_addresses
                 self.logger.info(f"Tìm thấy {len(ip_addresses)} IP trong lịch sử")
                 self.logger.debug(f"Danh sách IP: {ip_addresses}")
                 return ip_addresses
+            
             self.logger.info("Không tìm thấy lịch sử IP")
             return []
         except Exception as e:
@@ -227,13 +230,16 @@ class FraudDetectionSystem:
     
     def _get_user_transaction_history(self, db: Session, user_id: str):
         """Lấy lịch sử giao dịch của người dùng từ database"""
-        transactions = db.query(Transaction).filter(Transaction.user_id == user_id).all()
+
+        transactions = db.query(Transaction).filter(Transaction.user_id == user_id).order_by(Transaction.timestamp.desc()).limit(100).all()
+        self.logger.info(f"Tìm thấy {len(transactions)} giao dịch")
+
         return [{
             'amount': t.amount,
             'currency': t.currency,
             'description': t.description,
             'category': t.category,
-            'timestamp': t.timestamp,
+            'timestamp': t.timestamp.isoformat() if isinstance(t.timestamp, datetime) else t.timestamp,
             'geolocation': t.geolocation,
             'device_id': t.device_id,
             'ip_address': t.ip_address
@@ -276,17 +282,18 @@ class FraudDetectionSystem:
         try:
             # Lấy user profile từ database
             profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
+            self.logger.info(f"Found profile: {profile.__dict__ if profile else None}")
             
             if not profile:
                 return None
                 
             # Chuyển đổi profile thành dictionary
             return {
-                'common_locations': json.loads(profile.common_locations) if profile.common_locations else [],
-                'common_devices': json.loads(profile.common_devices) if profile.common_devices else [],
-                'common_categories': json.loads(profile.common_categories) if profile.common_categories else [],
+                'common_locations': profile.common_locations if profile.common_locations else [],
+                'common_devices': profile.common_devices if profile.common_devices else [],
+                'common_categories': profile.common_categories if profile.common_categories else [],
                 'avg_transaction_amount': profile.avg_transaction_amount,
-                'typical_transaction_hours': json.loads(profile.typical_transaction_hours) if profile.typical_transaction_hours else [],
+                'typical_transaction_hours': profile.typical_transaction_hours if profile.typical_transaction_hours else [],
                 'transactions': self._get_user_transaction_history(db, user_id)
             }
             
@@ -535,14 +542,10 @@ class FraudDetectionSystem:
             currency=transaction_data.get('currency', 'VND'),
             description=transaction_data.get('description', ''),
             category=transaction_data.get('category'),
-            timestamp=transaction_data.get('timestamp', datetime.utcnow()),
+            timestamp=transaction_data.get('timestamp', datetime.now()),
             ip_address=transaction_data.get('ip_address'),
             geolocation=transaction_data.get('geolocation'),
             device_id=transaction_data.get('device_id'),
-            is_suspicious=transaction_data.get('is_suspicious', False),
-            risk_score=transaction_data.get('risk_score', 0.0),
-            verified=transaction_data.get('verified', False),
-            is_fraud=transaction_data.get('is_fraud', False)
         )
         db.add(transaction)
         
@@ -557,26 +560,26 @@ class FraudDetectionSystem:
         if transactions:
             # Cập nhật locations
             locations = set(t.get('geolocation') for t in transactions if t.get('geolocation'))
-            profile.common_locations = json.dumps(list(locations))
+            profile.common_locations = list(locations)
             
             # Cập nhật devices
             devices = set(t.get('device_id') for t in transactions if t.get('device_id'))
-            profile.common_devices = json.dumps(list(devices))
+            profile.common_devices = list(devices)
             
             # Cập nhật categories
             categories = set(t.get('category') for t in transactions if t.get('category'))
-            profile.common_categories = json.dumps(list(categories))
+            profile.common_categories = list(categories)
             
             # Cập nhật ip_addresses
             ip_addresses = set(t.get('ip_address') for t in transactions if t.get('ip_address'))
-            profile.common_ip_addresses = json.dumps(list(ip_addresses))
+            profile.common_ip_addresses = list(ip_addresses)
                 
             # Cập nhật avg_transaction_amount
             profile.avg_transaction_amount = sum(t.get('amount', 0) for t in transactions) / len(transactions)
             
             # Cập nhật typical_transaction_hours
             hours = [t.get('timestamp', datetime.now()).hour for t in transactions if 'timestamp' in t]
-            profile.typical_transaction_hours = json.dumps(list(set(hours)))
+            profile.typical_transaction_hours = list(set(hours))
         
         profile.last_updated = datetime.now()
         db.commit()
@@ -693,55 +696,55 @@ class FraudDetectionSystem:
                 }
             }
     
-    def send_alert(self, db: Session, user_id: str, analysis_result, transaction_data):
-        """Gửi cảnh báo cho người dùng nếu phát hiện giao dịch đáng ngờ"""
-        if not analysis_result['is_suspicious']:
-            return False
+    # def send_alert(self, db: Session, user_id: str, analysis_result, transaction_data):
+    #     """Gửi cảnh báo cho người dùng nếu phát hiện giao dịch đáng ngờ"""
+    #     if not analysis_result['is_suspicious']:
+    #         return False
         
-        try:
-            # Thông tin cảnh báo
-            alert_info = {
-                'user_id': user_id,
-                'timestamp': datetime.now().isoformat(),
-                'transaction_id': transaction_data.get('transaction_id', ''),
-                'risk_score': analysis_result['risk_score'],
-                'reasons': analysis_result['reasons'],
-                'transaction_details': {
-                    'amount': transaction_data.get('amount', 0),
-                    'currency': transaction_data.get('currency', 'VND'),
-                    'description': transaction_data.get('description', ''),
-                    'category': transaction_data.get('category', ''),
-                    'location': transaction_data.get('geolocation', ''),
-                    'time': transaction_data.get('timestamp', datetime.now()).isoformat()
-                }
-            }
+    #     try:
+    #         # Thông tin cảnh báo
+    #         alert_info = {
+    #             'user_id': user_id,
+    #             'timestamp': datetime.now().isoformat(),
+    #             'transaction_id': transaction_data.get('transaction_id', ''),
+    #             'risk_score': analysis_result['risk_score'],
+    #             'reasons': analysis_result['reasons'],
+    #             'transaction_details': {
+    #                 'amount': transaction_data.get('amount', 0),
+    #                 'currency': transaction_data.get('currency', 'VND'),
+    #                 'description': transaction_data.get('description', ''),
+    #                 'category': transaction_data.get('category', ''),
+    #                 'location': transaction_data.get('geolocation', ''),
+    #                 'time': transaction_data.get('timestamp', datetime.now()).isoformat()
+    #             }
+    #         }
             
-            # Log thông tin cảnh báo
-            self.logger.info(f"Gửi cảnh báo: {alert_info}")
+    #         # Log thông tin cảnh báo
+    #         self.logger.info(f"Gửi cảnh báo: {alert_info}")
             
-            # Ở đây bạn sẽ kết nối với dịch vụ gửi cảnh báo như SMS, email, push notification
-            # Ví dụ:
-            # self._send_email_alert(user_id, alert_info)
-            # self._send_sms_alert(user_id, alert_info)
-            # self._send_push_notification(user_id, alert_info)
+    #         # Ở đây bạn sẽ kết nối với dịch vụ gửi cảnh báo như SMS, email, push notification
+    #         # Ví dụ:
+    #         # self._send_email_alert(user_id, alert_info)
+    #         # self._send_sms_alert(user_id, alert_info)
+    #         # self._send_push_notification(user_id, alert_info)
             
-            # Tạo alert mới
-            alert = Alert(
-                user_id=user_id,
-                timestamp=datetime.now(),
-                risk_score=analysis_result['risk_score'],
-                reasons=json.dumps(analysis_result['reasons']),
-                transaction_id=transaction_data.get('transaction_id'),
-                transaction_details=json.dumps(transaction_data.get('transaction_details', {}))
-            )
-            db.add(alert)
-            db.commit()
+    #         # Tạo alert mới
+    #         alert = Alert(
+    #             user_id=user_id,
+    #             timestamp=datetime.now(),
+    #             risk_score=analysis_result['risk_score'],
+    #             reasons=json.dumps(analysis_result['reasons']),
+    #             transaction_id=transaction_data.get('transaction_id'),
+    #             transaction_details=json.dumps(transaction_data.get('transaction_details', {}))
+    #         )
+    #         db.add(alert)
+    #         db.commit()
             
-            return True
+    #         return True
             
-        except Exception as e:
-            self.logger.error(f"Lỗi khi gửi cảnh báo: {str(e)}")
-            return False
+    #     except Exception as e:
+    #         self.logger.error(f"Lỗi khi gửi cảnh báo: {str(e)}")
+    #         return False
 
     def process_transaction(self, db: Session, transaction_data: dict) -> dict:
         """
@@ -756,7 +759,6 @@ class FraudDetectionSystem:
             self.logger.info(f"Dữ liệu giao dịch: {json.dumps(transaction_data, indent=2, default=str)}")
             
             user_profile = self._get_user_profile(db, user_id)
-            self.logger.info(f"Processing transaction for user {user_id}")
             
             # Perform AI analysis
             ai_analysis = self.analyze_with_ai(transaction_data, user_profile)
@@ -797,7 +799,7 @@ class FraudDetectionSystem:
             self.logger.info(f"Lý do đáng ngờ: {combined_reasons}")
             
             # Create new transaction record
-            transaction = Transaction(
+            transactionAnalysis = TransactionAnalysis(
                 transaction_id=transaction_data.get('transaction_id', str(uuid.uuid4())),
                 user_id=user_id,
                 amount=transaction_data['amount'],
@@ -810,14 +812,14 @@ class FraudDetectionSystem:
                 device_id=transaction_data.get('device_id', 'unknown'),
                 is_suspicious=is_suspicious,
                 risk_score=combined_fraud_score,
-                ai_analysis=json.dumps(ai_analysis),
-                traditional_analysis=json.dumps(traditional_analysis),
+                ai_analysis=ai_analysis,
+                traditional_analysis=traditional_analysis,
                 fraud_reasons=combined_reasons
             )
             
-            db.add(transaction)
+            db.add(transactionAnalysis)
             db.commit()
-            self.logger.info(f"Đã lưu giao dịch vào database với ID: {transaction.transaction_id}")
+            self.logger.info(f"Đã lưu giao dịch analysis vào database với ID: {transactionAnalysis.transaction_id}")
             
             # Create alert if transaction is suspicious
             if is_suspicious:
@@ -863,6 +865,11 @@ class FraudDetectionSystem:
                     'suggestions': ''
                 }
             }
+        
+    def datetime_converter(obj):
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
 
     def analyze_with_ai(self, transaction_data: Dict, user_profile: Optional[Dict] = None) -> Dict:
         """
@@ -895,21 +902,31 @@ class FraudDetectionSystem:
                 'geolocation': transaction_data.get('geolocation', 'unknown'),
                 'timestamp': transaction_data['timestamp'].isoformat() if isinstance(transaction_data['timestamp'], datetime) else transaction_data['timestamp']
             }
+            logging.info(f"Transaction info prepared: {json.dumps(transaction_info, indent=2)}")
             
             # Prepare account info
+            logging.info("Preparing account info...")
             account_info = {
                 'user_id': transaction_data['user_id'],
-                'profile': user_profile if user_profile else {}
+                'profile': {
+                    'common_locations': user_profile['common_locations'],
+                    'common_devices': user_profile['common_devices'],
+                    'common_categories': user_profile['common_categories'],
+                    'avg_transaction_amount': user_profile['avg_transaction_amount'],
+                    'typical_transaction_hours': user_profile['typical_transaction_hours'],
+                }
             }
+            logging.info(f"Account info prepared: {json.dumps(account_info, indent=2)}")
             
             # Prepare transaction history
+            logging.info("Preparing transaction history...")
             history_info = []
             if user_profile and 'transactions' in user_profile:
                 history_info = user_profile['transactions']
+                logging.info(f"Found {len(history_info)} historical transactions")
+            else:
+                logging.info("No transaction history found")
             
-            logging.info(f"Transaction info prepared: {json.dumps(transaction_info, indent=2)}")
-            logging.info(f"Account info prepared: {json.dumps(account_info, indent=2)}")
-            logging.info(f"History info prepared: {json.dumps(history_info, indent=2)}")
             
             # Format prompt with actual data
             prompt = self.FRAUD_DETECTION_PROMPT.format(

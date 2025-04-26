@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 import uuid
 import os
 from agent import FraudDetectionSystem
-from database import get_db, init_db, User, Transaction, UserProfile, Alert
+from database import get_db, init_db, User, TransactionAnalysis, UserProfile, Alert
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -145,12 +145,12 @@ def verify_transaction():
         db = next(get_db())
         
         # Find transaction in database
-        transaction = db.query(Transaction).filter(
-            Transaction.transaction_id == transaction_id,
-            Transaction.user_id == user_id
+        transactionAnalysis = db.query(TransactionAnalysis).filter(
+            TransactionAnalysis.transaction_id == transaction_id,
+            TransactionAnalysis.user_id == user_id
         ).first()
         
-        if not transaction:
+        if not transactionAnalysis:
             logger.warning(f"Transaction {transaction_id} not found for user {user_id}")
             return jsonify({
                 'status': 'error',
@@ -160,12 +160,12 @@ def verify_transaction():
         logger.info(f"Found transaction {transaction_id}. Updating verification status")
         
         # Update transaction verification status
-        transaction.verified = True
+        transactionAnalysis.verified = True
         if is_legitimate:
-            transaction.is_fraud = False
+            transactionAnalysis.is_fraud = False
             logger.info(f"Transaction {transaction_id} marked as legitimate")
         else:
-            transaction.is_fraud = True
+            transactionAnalysis.is_fraud = True
             logger.info(f"Transaction {transaction_id} marked as fraudulent")
 
         
@@ -174,19 +174,16 @@ def verify_transaction():
             logger.info(f"Updating user profile for legitimate transaction {transaction_id}")
             # Get transaction data for profile update
             transaction_data = {
-                'transaction_id': transaction.transaction_id,
-                'user_id': transaction.user_id,
-                'amount': transaction.amount,
-                'currency': transaction.currency,
-                'description': transaction.description,
-                'category': transaction.category,
-                'timestamp': transaction.timestamp,
-                'ip_address': transaction.ip_address,
-                'geolocation': transaction.geolocation,
-                'device_id': transaction.device_id,
-                'is_suspicious': False,  # Giao dịch hợp lệ
-                'is_fraud': False,      # Không phải gian lận
-                'verified': True
+                'transaction_id': transactionAnalysis.transaction_id,
+                'user_id': transactionAnalysis.user_id,
+                'amount': transactionAnalysis.amount,
+                'currency': transactionAnalysis.currency,
+                'description': transactionAnalysis.description,
+                'category': transactionAnalysis.category,
+                'timestamp': transactionAnalysis.timestamp,
+                'ip_address': transactionAnalysis.ip_address,
+                'geolocation': transactionAnalysis.geolocation,
+                'device_id': transactionAnalysis.device_id,
             }
             
             # Update user profile with verified transaction
@@ -211,50 +208,50 @@ def verify_transaction():
         }), 500
 
 # API endpoint để nhận thống kê
-@app.route('/api/v1/statistics', methods=['GET'])
-def get_statistics():
-    try:
-        # Số lượng người dùng
-        user_count = len(fraud_system.user_profiles)
+# @app.route('/api/v1/statistics', methods=['GET'])
+# def get_statistics():
+#     try:
+#         # Số lượng người dùng
+#         user_count = len(fraud_system.user_profiles)
         
-        # Tổng số giao dịch
-        transaction_count = sum(len(profile['transactions']) for profile in fraud_system.user_profiles.values())
+#         # Tổng số giao dịch
+#         transaction_count = sum(len(profile['transactions']) for profile in fraud_system.user_profiles.values())
         
-        # Số lượng cảnh báo trong 7 ngày qua
-        alerts_count = 0
-        seven_days_ago = datetime.now() - timedelta(days=7)
+#         # Số lượng cảnh báo trong 7 ngày qua
+#         alerts_count = 0
+#         seven_days_ago = datetime.now() - timedelta(days=7)
         
-        # Đọc log để đếm cảnh báo
-        try:
-            with open('fraud_detection.log', 'r') as log_file:
-                for line in log_file:
-                    if 'Phát hiện giao dịch đáng ngờ' in line:
-                        try:
-                            log_date = datetime.strptime(line.split(' - ')[0], '%Y-%m-%d %H:%M:%S,%f')
-                            if log_date > seven_days_ago:
-                                alerts_count += 1
-                        except:
-                            pass
-        except FileNotFoundError:
-            pass
+#         # Đọc log để đếm cảnh báo
+#         try:
+#             with open('fraud_detection.log', 'r') as log_file:
+#                 for line in log_file:
+#                     if 'Phát hiện giao dịch đáng ngờ' in line:
+#                         try:
+#                             log_date = datetime.strptime(line.split(' - ')[0], '%Y-%m-%d %H:%M:%S,%f')
+#                             if log_date > seven_days_ago:
+#                                 alerts_count += 1
+#                         except:
+#                             pass
+#         except FileNotFoundError:
+#             pass
         
-        return jsonify({
-            'status': 'success',
-            'statistics': {
-                'user_count': user_count,
-                'transaction_count': transaction_count,
-                'alerts_last_7_days': alerts_count,
-                'generated_at': datetime.now().isoformat()
-            }
-        })
+#         return jsonify({
+#             'status': 'success',
+#             'statistics': {
+#                 'user_count': user_count,
+#                 'transaction_count': transaction_count,
+#                 'alerts_last_7_days': alerts_count,
+#                 'generated_at': datetime.now().isoformat()
+#             }
+#         })
         
-    except Exception as e:
-        logger.error(f"Error getting statistics: {str(e)}")
-        return jsonify({
-            'status': 'error',
-            'message': 'Server error while getting statistics',
-            'error': str(e)
-        }), 500
+#     except Exception as e:
+#         logger.error(f"Error getting statistics: {str(e)}")
+#         return jsonify({
+#             'status': 'error',
+#             'message': 'Server error while getting statistics',
+#             'error': str(e)
+#         }), 500
 
 @app.route('/api/v1/get_user_profile/<user_id>', methods=['GET'])
 def get_user_profile(user_id):
@@ -270,22 +267,27 @@ def get_user_profile(user_id):
             return jsonify({'error': 'User profile not found'}), 404
             
         # Get recent transactions
-        transactions = db.query(Transaction).filter(
-            Transaction.user_id == user_id
-        ).order_by(Transaction.timestamp.desc()).limit(10).all()
+        transactions = db.query(TransactionAnalysis).filter(
+            TransactionAnalysis.user_id == user_id
+        ).order_by(TransactionAnalysis.timestamp.desc()).limit(10).all()
         
         # Format response
         response = {
             'user_id': user_id,
-            'common_locations': json.loads(profile.common_locations) if profile.common_locations else [],
-            'common_devices': json.loads(profile.common_devices) if profile.common_devices else [],
-            'common_categories': json.loads(profile.common_categories) if profile.common_categories else [],
+            'common_locations': profile.common_locations if profile.common_locations else [],
+            'common_devices': profile.common_devices if profile.common_devices else [],
+            'common_categories': profile.common_categories if profile.common_categories else [],
             'avg_transaction_amount': profile.avg_transaction_amount,
-            'typical_transaction_hours': json.loads(profile.typical_transaction_hours) if profile.typical_transaction_hours else [],
+            'typical_transaction_hours': profile.typical_transaction_hours if profile.typical_transaction_hours else [],
             'recent_transactions': [{
                 'transaction_id': t.transaction_id,
                 'amount': t.amount,
                 'category': t.category,
+                'currency': t.currency,
+                'description': t.description,
+                'ip_address': t.ip_address,
+                'geolocation': t.geolocation,
+                'device_id': t.device_id,
                 'timestamp': t.timestamp.isoformat(),
                 'is_suspicious': t.is_suspicious,
                 'risk_score': t.risk_score
@@ -298,34 +300,34 @@ def get_user_profile(user_id):
         logging.error(f"Error getting user profile: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/v1/get_alerts/<user_id>', methods=['GET'])
-def get_alerts(user_id):
-    """Get recent alerts for a user"""
-    try:
-        # Get database session
-        db = next(get_db())
+# @app.route('/api/v1/get_alerts/<user_id>', methods=['GET'])
+# def get_alerts(user_id):
+#     """Get recent alerts for a user"""
+#     try:
+#         # Get database session
+#         db = next(get_db())
         
-        # Get recent alerts
-        alerts = db.query(Alert).filter(
-            Alert.user_id == user_id
-        ).order_by(Alert.timestamp.desc()).limit(10).all()
+#         # Get recent alerts
+#         alerts = db.query(Alert).filter(
+#             Alert.user_id == user_id
+#         ).order_by(Alert.timestamp.desc()).limit(10).all()
         
-        # Format response
-        response = [{
-            'alert_id': a.alert_id,
-            'timestamp': a.timestamp.isoformat(),
-            'risk_score': a.risk_score,
-            'reasons': json.loads(a.reasons),
-            'transaction_id': a.transaction_id,
-            'transaction_details': json.loads(a.transaction_details),
-            'status': a.status
-        } for a in alerts]
+#         # Format response
+#         response = [{
+#             'alert_id': a.alert_id,
+#             'timestamp': a.timestamp.isoformat(),
+#             'risk_score': a.risk_score,
+#             'reasons': json.loads(a.reasons),
+#             'transaction_id': a.transaction_id,
+#             'transaction_details': json.loads(a.transaction_details),
+#             'status': a.status
+#         } for a in alerts]
         
-        return jsonify(response), 200
+#         return jsonify(response), 200
         
-    except Exception as e:
-        logging.error(f"Error getting alerts: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+#     except Exception as e:
+#         logging.error(f"Error getting alerts: {str(e)}")
+#         return jsonify({'error': str(e)}), 500
 
 # Khởi động server
 if __name__ == '__main__':

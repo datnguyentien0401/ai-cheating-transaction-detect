@@ -74,7 +74,7 @@ INSERT INTO user_profiles (
 );
 
 -- Insert sample transactions
-INSERT INTO transactions (
+INSERT INTO transaction_analyses (
     transaction_id, user_id, amount, currency, description, category, 
     timestamp, ip_address, geolocation, device_id, is_suspicious, 
     risk_score, verified, is_fraud, ai_analysis, traditional_analysis, 
@@ -160,10 +160,15 @@ INSERT INTO transactions (
 '{"fraud_score": 10, "is_suspicious": false}',
 '[]');
 
--- Insert sample alerts
-INSERT INTO alerts (alert_id, user_id, transaction_id, timestamp, risk_score, reasons, transaction_details, status) VALUES
-('alert_1', 'user_2', 'tx_3', NOW() - INTERVAL 1 DAY, 0.7, '["Unusual amount"]', '{"amount": 5000000, "currency": "VND", "category": "Electronics"}', 'pending'),
-('alert_2', 'user_2', 'tx_4', NOW() - INTERVAL 2 DAY, 0.8, '["Unusual location"]', '{"amount": 2000000, "currency": "VND", "category": "Clothing"}', 'confirmed'),
-('alert_3', 'user_3', 'tx_6', NOW() - INTERVAL 2 DAY, 0.6, '["Unusual amount"]', '{"amount": 3000000, "currency": "VND", "category": "Electronics"}', 'pending'),
-('alert_4', 'user_4', 'tx_7', NOW() - INTERVAL 1 DAY, 0.9, '["Unusual amount", "Unusual location"]', '{"amount": 8000000, "currency": "VND", "category": "Home"}', 'confirmed'),
-('alert_5', 'user_4', 'tx_8', NOW() - INTERVAL 2 DAY, 0.5, '["Unusual amount"]', '{"amount": 4000000, "currency": "VND", "category": "Beauty"}', 'pending'); 
+-- Insert sample transactions
+INSERT INTO transactions (transaction_id, user_id, amount, currency, description, category, timestamp, ip_address, geolocation, device_id) VALUES
+('TX001', 'user_1', 150000, 'VND', 'Shopping at Vincom Mall', 'shopping', '2024-03-20 10:30:00', '192.168.1.100', 'Vietnam', 'mobile-ios-1'),
+('TX002', 'user_1', 75000, 'VND', 'Lunch at Lotteria', 'food', '2024-03-20 12:15:00', '192.168.1.100', 'Vietnam', 'mobile-ios-1'),
+('TX003', 'user_1', 5000000, 'VND', 'iPhone purchase at Apple Store', 'electronics', '2024-03-20 14:45:00', '192.168.1.100', 'Vietnam', 'mobile-ios-1'),
+('TX004', 'user_1', 200000, 'VND', 'Grocery shopping at Big C', 'shopping', '2024-03-20 16:20:00', '192.168.1.100', 'Vietnam', 'mobile-ios-1'),
+('TX005', 'user_1', 300000, 'VND', 'Dinner at restaurant', 'food', '2024-03-20 19:00:00', '192.168.1.100', 'Vietnam', 'mobile-ios-1'),
+('TX006', 'user_1', 1500000, 'VND', 'Hotel booking for weekend trip', 'travel', '2024-03-20 20:30:00', '192.168.1.100', 'Vietnam', 'mobile-ios-1'),
+('TX007', 'user_1', 100000, 'VND', 'Late night food delivery', 'food', '2024-03-20 23:45:00', '192.168.1.100', 'Vietnam', 'mobile-ios-1'),
+('TX008', 'user_1', 250000, 'VND', 'Online shopping at Shopee', 'shopping', '2024-03-21 09:15:00', '192.168.1.100', 'Vietnam', 'mobile-ios-1'),
+('TX009', 'user_1', 1000000, 'VND', 'Flight booking to Da Nang', 'travel', '2024-03-21 11:30:00', '192.168.1.100', 'Vietnam'),
+('TX010', 'user_1', 350000, 'VND', 'Business lunch with client', 'food', '2024-03-21 13:00:00', '192.168.1.100', 'Vietnam', 'mobile-ios-1');
