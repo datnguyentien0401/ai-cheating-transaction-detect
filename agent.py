@@ -136,7 +136,13 @@ class FraudDetectionSystem:
         
         # Load mô hình hoặc tạo mới nếu chưa có
         try:
-            self.model = pickle.load(open('fraud_detection_model.pkl', 'rb'))
+            model_path = os.path.join(os.path.dirname(__file__), 'fraud_detection_model.pkl')
+            if os.path.exists(model_path):
+                with open(model_path, 'rb') as f:
+                    self.model = pickle.load(f)
+            else:
+                self.logger.warning(f"Model file not found at {model_path}")
+                raise FileNotFoundError("Model file not found")
             self.scaler = pickle.load(open('scaler.pkl', 'rb'))
             self.encoder = pickle.load(open('encoder.pkl', 'rb'))
             self.logger.info("Đã tải mô hình phát hiện gian lận từ file")
@@ -163,16 +169,16 @@ class FraudDetectionSystem:
         try:
             # Sử dụng API AbuseIPDB để lấy danh sách IP độc hại
             # Bạn cần đăng ký tài khoản tại https://www.abuseipdb.com để lấy API key
-            api_key = os.getenv('OPENAI_API_KEY'),
+            api_key = os.getenv('ABUSEIPDB_API_KEY')
             headers = {
                 'Key': api_key,
-                'Accept': 'application/json',
+                'Accept': 'application/json'
             }
             
             # Lấy danh sách blacklist IP có điểm tin cậy từ 90% trở lên trong 30 ngày qua
             params = {
                 'confidenceMinimum': 90,
-                'limit': 10000  # Giới hạn số lượng IP trả về
+                'limit': 100  # Giới hạn số lượng IP trả về
             }
             
             response = requests.get(
@@ -189,7 +195,7 @@ class FraudDetectionSystem:
                 self.logger.info(f"Đã tải thành công {len(ip_list)} IP độc hại")
                 return set(ip_list)
             else:
-                self.logger..error(f"Lỗi khi tải IP độc hại: {response.status_code} - {response.text}")
+                self.logger.warning(f"Lỗi khi tải IP độc hại: {response.status_code} - {response.text}")
                 return set()
         except Exception as e:
             self.logger.warning(f"Không thể tải danh sách IP độc hại: {str(e)}")
@@ -199,15 +205,25 @@ class FraudDetectionSystem:
         """Lấy lịch sử vị trí của người dùng từ database"""
         user_profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
         if user_profile and user_profile.common_locations:
-            return json.loads(user_profile.common_locations)
+            return user_profile.common_locations
         return []
     
     def _get_user_ip_address_history(self, db: Session, user_id: str):
         """Lấy lịch sử vị trí của người dùng từ database"""
-        user_profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
-        if user_profile and user_profile.common_ip_addresses:
-            return json.loads(user_profile.common_ip_addresses)
-        return []
+        try:
+            self.logger.info(f"Lấy lịch sử IP của user {user_id}")
+            user_profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
+            self.logger.info(f"User profile: {user_profile.common_ip_addresses}")
+            if user_profile and user_profile.common_ip_addresses:
+                ip_addresses = user_profile.common_ip_addresses
+                self.logger.info(f"Tìm thấy {len(ip_addresses)} IP trong lịch sử")
+                self.logger.debug(f"Danh sách IP: {ip_addresses}")
+                return ip_addresses
+            self.logger.info("Không tìm thấy lịch sử IP")
+            return []
+        except Exception as e:
+            self.logger.error(f"Lỗi khi lấy lịch sử IP: {str(e)}", exc_info=True)
+            return []
     
     def _get_user_transaction_history(self, db: Session, user_id: str):
         """Lấy lịch sử giao dịch của người dùng từ database"""
@@ -234,14 +250,14 @@ class FraudDetectionSystem:
         """Lấy các danh mục sản phẩm thường mua của người dùng từ database"""
         user_profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
         if user_profile and user_profile.common_categories:
-            return set(json.loads(user_profile.common_categories))
+            return set(user_profile.common_categories)
         return set()
     
     def _get_common_transaction_times(self, db: Session, user_id: str):
         """Lấy thời gian giao dịch thường xuyên của người dùng từ database"""
         user_profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
         if user_profile and user_profile.typical_transaction_hours:
-            return json.loads(user_profile.typical_transaction_hours)
+            return user_profile.typical_transaction_hours
         return []
     
     def _get_recent_transactions(self, db: Session, user_id: str, hours=1):
@@ -279,25 +295,32 @@ class FraudDetectionSystem:
             return None
     
     def _check_ip_address(self, db: Session, user_id: str, ip_address: str) -> Dict:
-        """Kiểm tra địa chỉ IP có đáng ngờ không"""
+        """Check if the IP address is suspicious"""
         try:
-            # Kiểm tra IP có trong danh sách đen không
+            self.logger.info(f"Checking IP {ip_address} for user {user_id}")
+            
+            # Check if IP is in blacklist
             if ip_address in self.known_bad_ips:
+                self.logger.warning(f"IP {ip_address} is in the malicious IP list")
                 return {
                     'is_suspicious': True,
-                    'reason': 'IP nằm trong danh sách IP độc hại đã biết',
+                    'reason': 'IP is in the known malicious IP list',
                     'risk_score': 0.9
                 }
-            
-            # Lấy user profile
+        
+            # Get user profile
             common_ips = self._get_user_ip_address_history(db, user_id)
+            self.logger.info(f"User's common IPs: {common_ips}")
+            
             if ip_address not in common_ips:
+                self.logger.warning(f"IP {ip_address} has never appeared in history")
                 return {
                     'is_suspicious': True,
-                    'reason': f'IP mới: {ip_address} chưa từng xuất hiện trong lịch sử',
+                    'reason': f'New IP: {ip_address} has never appeared in history',
                     'risk_score': 0.7
                 }
             
+            self.logger.info(f"IP {ip_address} is valid")
             return {'is_suspicious': False, 'reason': '', 'risk_score': 0.0}
             
         except Exception as e:
@@ -305,84 +328,95 @@ class FraudDetectionSystem:
             return {'is_suspicious': False, 'reason': '', 'risk_score': 0.0}
 
     def _check_location(self, db: Session, user_id, geolocation):
-        """Kiểm tra vị trí location có bất thường không"""
-        # Kiểm tra vị trí có trong lịch sử không
-        locations = self._get_user_location_history(db, user_id)
-        if locations and geolocation not in locations:
-            return {
-                'is_suspicious': True,
-                'reason': f'Vị trí mới: {geolocation} chưa từng xuất hiện trong lịch sử',
-                'risk_score': 0.7
-            }
+        """Check if the location is suspicious"""
+        try:
+            self.logger.info(f"Checking location {geolocation} for user {user_id}")
+            
+            # Check if location is in history
+            locations = self._get_user_location_history(db, user_id)
+            self.logger.info(f"User's common locations: {locations}")
+            
+            if locations and geolocation not in locations:
+                self.logger.warning(f"New location: {geolocation} has never appeared in history")
+                return {
+                    'is_suspicious': True,
+                    'reason': f'New location: {geolocation} has never appeared in history',
+                    'risk_score': 0.7
+                }
         
-        return {'is_suspicious': False, 'reason': '', 'risk_score': 0.0}
+            self.logger.info(f"Location {geolocation} is valid")
+            return {'is_suspicious': False, 'reason': '', 'risk_score': 0.0}
+            
+        except Exception as e:
+            self.logger.error(f"Error checking location: {str(e)}")
+            return {'is_suspicious': False, 'reason': '', 'risk_score': 0.0}
     
     def _check_amount(self, db: Session, user_id, amount):
-        """Kiểm tra số tiền giao dịch có bất thường không"""
+        """Check if the transaction amount is suspicious"""
         avg_amount = self._get_average_transaction_amount(db, user_id)
         threshold = avg_amount * self.thresholds['amount_threshold_factor']
         
         if amount > threshold and threshold > 0:
             return {
                 'is_suspicious': True,
-                'reason': f'Số tiền ({amount}) cao hơn ngưỡng bình thường ({threshold:.2f})',
+                'reason': f'Amount ({amount}) is higher than normal threshold ({threshold:.2f})',
                 'risk_score': min(0.9, (amount / threshold) * 0.5)
             }
         
         return {'is_suspicious': False, 'reason': '', 'risk_score': 0.0}
     
     def _check_category(self, db: Session, user_id, category):
-        """Kiểm tra danh mục sản phẩm có bất thường không"""
+        """Check if the product category is suspicious"""
         common_categories = self._get_common_categories(db, user_id)
         
         if common_categories and category not in common_categories:
             return {
                 'is_suspicious': True,
-                'reason': f'Danh mục sản phẩm mới: {category}',
+                'reason': f'New product category: {category}',
                 'risk_score': 0.5
             }
         
         return {'is_suspicious': False, 'reason': '', 'risk_score': 0.0}
     
     def _check_time(self, db: Session, user_id, timestamp):
-        """Kiểm tra thời gian giao dịch có bất thường không"""
+        """Check if the transaction time is suspicious"""
         hour = timestamp.hour
         
-        # Kiểm tra giờ giao dịch có trong khoảng đáng ngờ không
+        # Check if transaction time is in suspicious hours
         if self.thresholds['suspicious_hour_start'] <= hour <= self.thresholds['suspicious_hour_end']:
-            # Kiểm tra xem người dùng có thường xuyên giao dịch vào giờ này không
+            # Check if user usually transacts at this hour
             common_hours = self._get_common_transaction_times(db, user_id)
             if hour not in common_hours:
                 return {
                     'is_suspicious': True,
-                    'reason': f'Giao dịch vào thời điểm bất thường: {hour}:00',
+                    'reason': f'Transaction at unusual time: {hour}:00',
                     'risk_score': 0.6
                 }
         
         return {'is_suspicious': False, 'reason': '', 'risk_score': 0.0}
     
     def _check_frequency(self, db: Session, user_id, timestamp):
-        """Kiểm tra tần suất giao dịch có bất thường không"""
+        """Check if the transaction frequency is suspicious"""
         recent = self._get_recent_transactions(db, user_id, hours=1)
         
         if len(recent) >= self.thresholds['max_transactions_per_hour']:
             return {
                 'is_suspicious': True,
-                'reason': f'Số lượng giao dịch nhiều bất thường trong 1 giờ: {len(recent)}',
+                'reason': f'Unusual number of transactions in 1 hour: {len(recent)}',
                 'risk_score': min(0.8, len(recent) / self.thresholds['max_transactions_per_hour'] * 0.4)
             }
         
         return {'is_suspicious': False, 'reason': '', 'risk_score': 0.0}
     
     def _check_device(self, db: Session, user_id, device_id):
-        """Kiểm tra thiết bị có bất thường không"""
+        """Check if the device is suspicious"""
         user_profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
         if user_profile and user_profile.common_devices:
-            common_devices = json.loads(user_profile.common_devices)
+            common_devices = user_profile.common_devices
             if device_id not in common_devices:
                 return {
                     'is_suspicious': True,
-                    'reason': f'Thiết bị mới: {device_id}',
+                    'reason': f'New device: {device_id}',
                     'risk_score': 0.6
                 }
         
@@ -469,13 +503,18 @@ class FraudDetectionSystem:
             # Thực hiện dự đoán
             if isinstance(self.model.named_steps['classifier'], RandomForestClassifier):
                 # Lấy xác suất của lớp dương tính (gian lận)
+                self.logger.info("Using RandomForestClassifier for prediction")
                 proba = self.model.predict_proba(X)[0][1]
+                self.logger.info(f"Predicted fraud probability: {proba}")
                 return proba
             else:
                 # Isolation Forest trả về điểm bất thường
+                self.logger.info("Using IsolationForest for prediction") 
                 score = -self.model.decision_function(X)[0]
-                return score / 2 + 0.5  # Chuẩn hóa về khoảng 0-1
-                
+                normalized_score = score / 2 + 0.5  # Chuẩn hóa về khoảng 0-1
+                self.logger.info(f"Raw anomaly score: {score}")
+                self.logger.info(f"Normalized anomaly score: {normalized_score}")
+                return normalized_score
         except Exception as e:
             self.logger.error(f"Lỗi khi dự đoán với mô hình: {str(e)}")
             return 0.5
@@ -931,10 +970,10 @@ class FraudDetectionSystem:
                     raise ValueError(f"Missing required field: {field}")
             
             # Check data consistency
-            total_score = sum(item.get('fraud_score', 0) for item in analysis_result.get('fraud_details', []))
-            if abs(total_score - analysis_result.get('fraud_score', 0)) > 0.01:  # Allow small rounding errors
-                logging.warning(f"Fraud score mismatch: calculated={total_score}, provided={analysis_result.get('fraud_score', 0)}")
-                analysis_result['fraud_score'] = total_score
+            avg_score = sum(item.get('fraud_score', 0) for item in analysis_result.get('fraud_details', [])) / len(analysis_result.get('fraud_details', [])) if analysis_result.get('fraud_details') else 0
+            if abs(avg_score - analysis_result.get('fraud_score', 0)) > 0.01:  # Allow small rounding errors
+                logging.warning(f"Fraud score mismatch: calculated={avg_score}, provided={analysis_result.get('fraud_score', 0)}")
+                analysis_result['fraud_score'] = avg_score
             
             # Check for duplicate types
             check_types = [item.get('type') for item in analysis_result.get('fraud_details', [])]

@@ -132,7 +132,10 @@ def verify_transaction():
         user_id = data.get('user_id')
         is_legitimate = data.get('is_legitimate', False)
         
+        logger.info(f"Verifying transaction {transaction_id} for user {user_id}. Is legitimate: {is_legitimate}")
+        
         if not transaction_id or not user_id:
+            logger.warning("Missing transaction_id or user_id in request")
             return jsonify({
                 'status': 'error',
                 'message': 'Missing transaction_id or user_id'
@@ -148,20 +151,27 @@ def verify_transaction():
         ).first()
         
         if not transaction:
+            logger.warning(f"Transaction {transaction_id} not found for user {user_id}")
             return jsonify({
                 'status': 'error',
                 'message': 'Transaction not found'
             }), 404
         
+        logger.info(f"Found transaction {transaction_id}. Updating verification status")
+        
         # Update transaction verification status
         transaction.verified = True
         if is_legitimate:
             transaction.is_fraud = False
+            logger.info(f"Transaction {transaction_id} marked as legitimate")
         else:
             transaction.is_fraud = True
+            logger.info(f"Transaction {transaction_id} marked as fraudulent")
+
         
         # If transaction is legitimate, update user profile
         if is_legitimate:
+            logger.info(f"Updating user profile for legitimate transaction {transaction_id}")
             # Get transaction data for profile update
             transaction_data = {
                 'transaction_id': transaction.transaction_id,
@@ -181,7 +191,12 @@ def verify_transaction():
             
             # Update user profile with verified transaction
             fraud_system.update_user_profile(db, user_id, transaction_data)
+            logger.info(f"User profile updated successfully for user {user_id}")
         
+        # Update transaction s
+        db.commit()
+
+        logger.info(f"Transaction verification completed for {transaction_id}")
         return jsonify({
             'status': 'success',
             'message': 'Transaction verification recorded'

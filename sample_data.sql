@@ -19,7 +19,7 @@ INSERT INTO user_profiles (
 ) VALUES
 -- User 1: Regular user with consistent patterns
 (
-    'user_001',
+    'user_1',
     '["Vietnam", "Ho Chi Minh City"]',
     '["mobile-android-12345", "desktop-windows-67890"]',
     '["Food & Dining", "Shopping", "Transportation"]',
@@ -30,7 +30,7 @@ INSERT INTO user_profiles (
 ),
 -- User 2: High-value customer
 (
-    'user_002',
+    'user_2',
     '["Vietnam", "Ha Noi", "Da Nang"]',
     '["mobile-ios-23456", "tablet-ios-78901"]',
     '["Shopping", "Entertainment", "Travel"]',
@@ -41,7 +41,7 @@ INSERT INTO user_profiles (
 ),
 -- User 3: International traveler
 (
-    'user_003',
+    'user_3',
     '["Vietnam", "Singapore", "Thailand", "Japan"]',
     '["mobile-android-34567", "laptop-mac-89012"]',
     '["Travel", "Shopping", "Food & Dining"]',
@@ -52,7 +52,7 @@ INSERT INTO user_profiles (
 ),
 -- User 4: Night owl user
 (
-    'user_004',
+    'user_4',
     '["Vietnam", "Ho Chi Minh City"]',
     '["mobile-android-45678", "desktop-linux-90123"]',
     '["Entertainment", "Food & Dining", "Shopping"]',
@@ -63,7 +63,7 @@ INSERT INTO user_profiles (
 ),
 -- User 5: Business user
 (
-    'user_005',
+    'user_5',
     '["Vietnam", "Ha Noi", "Ho Chi Minh City", "Da Nang"]',
     '["laptop-windows-56789", "mobile-ios-01234"]',
     '["Business", "Transportation", "Food & Dining"]',
