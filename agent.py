@@ -707,9 +707,9 @@ class FraudDetectionSystem:
                 'suggestions': 'Consider additional verification for high-risk transactions' if is_suspicious else '',
                 'alert': {
                     'is_alert': is_suspicious,
-                    'message': 'Suspicious transaction detected' if is_suspicious else '',
+                    'message': 'Suspicious transaction detected' if is_suspicious else 'Normal transaction detected',
                     'details': suspicious_reasons_str,
-                    'suggestions': 'Verify transaction with user' if is_suspicious else ''
+                    'suggestions': 'Verify transaction with user' if is_suspicious else 'Normal transaction'
                 }
             }
             
