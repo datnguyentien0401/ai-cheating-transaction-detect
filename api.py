@@ -11,12 +11,7 @@ from database import get_db, init_db, User, TransactionAnalysis, UserProfile, Al
 from dotenv import load_dotenv
 
 # Parse command line arguments
-parser = argparse.ArgumentParser(description='Fraud Detection API')
-parser.add_argument('--env-file', type=str, help='Path to environment file', default='.env')
-args = parser.parse_args()
-
-# Load environment variables from specified file
-load_dotenv(args.env_file)
+load_dotenv()
 
 # Khởi tạo Flask app
 app = Flask(__name__)
