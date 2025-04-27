@@ -158,7 +158,7 @@ class FraudDetectionSystem:
             'suspicious_hour_start': 1,      # Từ 1 giờ sáng
             'suspicious_hour_end': 5,        # Đến 5 giờ sáng
             'max_transactions_per_hour': 5,  # Số giao dịch tối đa trong 1 giờ
-            'anomaly_score_threshold': 0.8   # Ngưỡng điểm bất thường
+            'anomaly_score_threshold': 0.65   # Ngưỡng điểm bất thường
         }
         
         # Danh sách IP được biết là nguy hiểm từ nguồn bên ngoài
