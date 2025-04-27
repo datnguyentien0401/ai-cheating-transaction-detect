@@ -11,42 +11,37 @@ services:
     env_file:
       - .env.beta
     environment:
-      - DB_HOST=${DB_HOST}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
-      - DB_PORT=${DB_PORT}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - OPENAI_BASE_URL=${OPENAI_BASE_URL}
-      - OPENAI_MODEL=${OPENAI_MODEL}
-      - ABUSEIPDB_API_KEY=${ABUSEIPDB_API_KEY}
+      - DB_HOST=db
+      - DB_USER=root
+      - DB_PASSWORD=123123
+      - DB_NAME=fraud_detection
+      - DB_PORT=3306
+      - OPENAI_API_KEY=ck-nguyen.tien.data-QulbvcPGIWerFxcgQbJH8XH2lYlT
+      - OPENAI_BASE_URL=https://openai-proxy-apigw-genai.api.linecorp.com/v1
+      - OPENAI_MODEL=gpt-4o
+    #  - ABUSEIPDB_API_KEY=${ABUSEIPDB_API_KEY}
     depends_on:
       db:
         condition: service_healthy
     networks:
       - app-network
-
   db:
     image: mysql:8.0
     ports:
       - "3306:3306"
     environment:
-      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+      MYSQL_ROOT_PASSWORD: 123123
       MYSQL_DATABASE: fraud_detection
     volumes:
-      - ./script.sql:/docker-entrypoint-initdb.d/init.sql
-      - mysql-data:/var/lib/mysql
-    networks:
-      - app-network
+      - ./docker/mysql-init:/docker-entrypoint-initdb.d
+      - ./docker/mysql-data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-ppassword"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "${MYSQL_USER}", "-p${MYSQL_PASSWORD}"]
       interval: 5s
       timeout: 5s
       retries: 5
-
+    networks:
+      - app-network
 networks:
   app-network:
     driver: bridge
-
-volumes:
-  mysql-data: 
