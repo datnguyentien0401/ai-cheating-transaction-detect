@@ -21,9 +21,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Sao chép toàn bộ mã nguồn vào container
 COPY . .
 
-# Copy .env.beta to .env in container
-COPY .env.beta .env
-
 # Tạo các thư mục cần thiết
 RUN mkdir -p /app/data/models
 
