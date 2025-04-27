@@ -627,7 +627,7 @@ class FraudDetectionSystem:
             - analysis_details: List[Dict] containing detailed analysis results
             - reasons: List[str] containing reasons for the decision
         """
-        self.logger.info(f"Starting transaction analysis")
+        self.logger.info(f"Starting ML transaction analysis")
         
         try:
             self.logger.info(f"transaction_data: {transaction_data}")
@@ -948,7 +948,6 @@ class FraudDetectionSystem:
                     'common_categories': user_profile['common_categories'],
                     'avg_transaction_amount': user_profile['avg_transaction_amount'],
                     'typical_transaction_hours': user_profile['typical_transaction_hours'],
-                    'x': user_profile['typical_transaction_hours'],
                 }
             }
             logging.info(f"Account info prepared: {json.dumps(account_info, indent=2)}")
