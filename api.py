@@ -5,12 +5,18 @@ import json
 from datetime import datetime, timedelta
 import uuid
 import os
+import argparse
 from agent import FraudDetectionSystem
 from database import get_db, init_db, User, TransactionAnalysis, UserProfile, Alert
 from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
+# Parse command line arguments
+parser = argparse.ArgumentParser(description='Fraud Detection API')
+parser.add_argument('--env-file', type=str, help='Path to environment file', default='.env')
+args = parser.parse_args()
+
+# Load environment variables from specified file
+load_dotenv(args.env_file)
 
 # Khởi tạo Flask app
 app = Flask(__name__)

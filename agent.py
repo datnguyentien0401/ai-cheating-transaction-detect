@@ -214,7 +214,6 @@ class FraudDetectionSystem:
             self.logger.info(f"Lấy lịch sử IP của user {user_id}")
             
             user_profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
-            self.logger.info(f"User profile: {user_profile.common_ip_addresses}")
             
             if user_profile and user_profile.common_ip_addresses:
                 ip_addresses = user_profile.common_ip_addresses
@@ -284,11 +283,21 @@ class FraudDetectionSystem:
             profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
             self.logger.info(f"Found profile: {profile.__dict__ if profile else None}")
             
+            # Return default profile if no profile found
             if not profile:
-                return None
+                return {
+                    'common_ip_addresses': [],
+                    'common_locations': [],
+                    'common_devices': [],
+                    'common_categories': [],
+                    'avg_transaction_amount': 0.0,
+                    'typical_transaction_hours': [],
+                    'transactions': []
+                }
                 
             # Chuyển đổi profile thành dictionary
             return {
+                'common_ip_addresses': profile.common_ip_addresses if profile.common_ip_addresses else [],
                 'common_locations': profile.common_locations if profile.common_locations else [],
                 'common_devices': profile.common_devices if profile.common_devices else [],
                 'common_categories': profile.common_categories if profile.common_categories else [],
@@ -299,7 +308,15 @@ class FraudDetectionSystem:
             
         except Exception as e:
             logging.error(f"Error getting user profile: {str(e)}")
-            return None
+            return {
+                'common_ip_addresses': [],
+                'common_locations': [],
+                'common_devices': [],
+                'common_categories': [],
+                'avg_transaction_amount': 0.0,
+                'typical_transaction_hours': [],
+                'transactions': []
+            }
     
     def _check_ip_address(self, db: Session, user_id: str, ip_address: str) -> Dict:
         """Check if the IP address is suspicious"""
@@ -808,7 +825,7 @@ class FraudDetectionSystem:
                 category=transaction_data.get('category', 'unknown'),
                 timestamp=transaction_data.get('timestamp', datetime.now()),
                 ip_address=transaction_data['ip_address'],
-                geolocation=transaction_data.get('geolocation', {}),
+                geolocation=transaction_data.get('geolocation', 'unknown'),
                 device_id=transaction_data.get('device_id', 'unknown'),
                 is_suspicious=is_suspicious,
                 risk_score=combined_fraud_score,
@@ -909,11 +926,13 @@ class FraudDetectionSystem:
             account_info = {
                 'user_id': transaction_data['user_id'],
                 'profile': {
+                    'common_ip_addresses': user_profile['common_ip_addresses'],
                     'common_locations': user_profile['common_locations'],
                     'common_devices': user_profile['common_devices'],
                     'common_categories': user_profile['common_categories'],
                     'avg_transaction_amount': user_profile['avg_transaction_amount'],
                     'typical_transaction_hours': user_profile['typical_transaction_hours'],
+                    'x': user_profile['typical_transaction_hours'],
                 }
             }
             logging.info(f"Account info prepared: {json.dumps(account_info, indent=2)}")
