@@ -8,8 +8,6 @@ services:
     volumes:
       - .:/app
       - ./data:/app/data
-    env_file:
-      - .env.beta
     environment:
       - DB_HOST=db
       - DB_USER=root
@@ -19,7 +17,7 @@ services:
       - OPENAI_API_KEY=ck-nguyen.tien.data-QulbvcPGIWerFxcgQbJH8XH2lYlT
       - OPENAI_BASE_URL=https://openai-proxy-apigw-genai.api.linecorp.com/v1
       - OPENAI_MODEL=gpt-4o
-    #  - ABUSEIPDB_API_KEY=${ABUSEIPDB_API_KEY}
+      - ABUSEIPDB_API_KEY=1399a3fb0b5e1896e61a917c31aa501cdde1401ad36c5b1a81c8120dde11e9e7be5e139cac6904f8
     depends_on:
       db:
         condition: service_healthy
