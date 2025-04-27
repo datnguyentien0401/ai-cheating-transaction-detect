@@ -10,16 +10,23 @@ load_dotenv()
 
 # Database configuration
 DB_USER = os.getenv('DB_USER', 'root')
-DB_PASSWORD = os.getenv('DB_PASSWORD', '')
-DB_HOST = os.getenv('DB_HOST', 'localhost')
+DB_PASSWORD = os.getenv('DB_PASSWORD', 'password')
+DB_HOST = os.getenv('DB_HOST', 'db')
 DB_PORT = os.getenv('DB_PORT', '3306')
 DB_NAME = os.getenv('DB_NAME', 'fraud_detection')
 
 # Create database URL
 DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
-# Create SQLAlchemy engine
-engine = create_engine(DATABASE_URL)
+# Create SQLAlchemy engine with connection pooling and retry settings
+engine = create_engine(
+    DATABASE_URL,
+    pool_pre_ping=True,  # Enable connection health checks
+    pool_recycle=3600,   # Recycle connections after 1 hour
+    pool_timeout=30,     # Wait up to 30 seconds for a connection
+    max_overflow=10,     # Allow up to 10 connections above pool_size
+    pool_size=5          # Maintain 5 connections in the pool
+)
 
 # Create session factory
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

@@ -4,22 +4,36 @@ FROM python:3.9-slim
 # Thiết lập thư mục làm việc
 WORKDIR /app
 
+# Cài đặt các thư viện phụ thuộc
+RUN apt-get update && apt-get install -y \
+    gcc \
+    python3-dev \
+    default-libmysqlclient-dev \
+    && rm -rf /var/lib/apt/lists/*
+
 # Sao chép file requirements.txt vào container
 COPY requirements.txt .
 
 # Cài đặt các thư viện phụ thuộc
 RUN pip install --no-cache-dir -r requirements.txt
+# RUN pip install --no-cache-dir "uvicorn[standard]" fastapi python-dotenv pymysql openai
 
 # Sao chép toàn bộ mã nguồn vào container
 COPY . .
 
+# Copy .env.beta to .env in container
+COPY .env.beta .env
+
+# Tạo các thư mục cần thiết
+RUN mkdir -p /app/data/models
+
 # Thiết lập biến môi trường
-ENV FLASK_APP=app.py
-ENV FLASK_ENV=production
-ENV PORT=5000
+ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
+ENV PATH="/root/.local/bin:${PATH}"
 
 # Mở cổng
-EXPOSE 5000
+EXPOSE 8000
 
-# Khởi động ứng dụng với gunicorn
-CMD gunicorn --bind 0.0.0.0:$PORT --workers 4 --threads 2 app:app
+# Khởi động ứng dụng với uvicorn
+CMD ["python", "-m", "uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

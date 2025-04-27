@@ -63,23 +63,25 @@ CREATE TABLE IF NOT EXISTS user_profiles (
 );
 
 -- Create alerts table
-CREATE TABLE IF NOT EXISTS alerts (
-    alert_id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id VARCHAR(50),
-    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-    risk_score FLOAT,
-    reasons JSON,
-    transaction_id VARCHAR(50),
-    transaction_details JSON,
-    fraud_reasons JSON,
-    FOREIGN KEY (user_id) REFERENCES users(user_id),
-    FOREIGN KEY (transaction_id) REFERENCES transactions(transaction_id)
-);
+-- CREATE TABLE IF NOT EXISTS alerts (
+--     alert_id INT AUTO_INCREMENT PRIMARY KEY,
+--     user_id VARCHAR(50),
+--     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+--     risk_score FLOAT,
+--     reasons JSON,
+--     transaction_id VARCHAR(50),
+--     transaction_details JSON,
+--     fraud_reasons JSON,
+--     FOREIGN KEY (user_id) REFERENCES users(user_id),
+--     FOREIGN KEY (transaction_id) REFERENCES transactions(transaction_id)
+-- );
 
 -- Create indexes for better performance
 CREATE INDEX idx_transactions_user_id ON transactions(user_id);
 CREATE INDEX idx_transactions_timestamp ON transactions(timestamp);
-CREATE INDEX idx_transactions_is_fraud ON transactions(is_fraud);
-CREATE INDEX idx_alerts_user_id ON alerts(user_id);
-CREATE INDEX idx_alerts_timestamp ON alerts(timestamp);
-CREATE INDEX idx_alerts_status ON alerts(status);
+CREATE INDEX idx_transaction_analyses_user_id ON transaction_analyses(user_id);
+CREATE INDEX idx_transaction_analyses_timestamp ON transaction_analyses(timestamp);
+CREATE INDEX idx_transaction_analyses_is_fraud ON transaction_analyses(is_fraud);
+-- CREATE INDEX idx_alerts_user_id ON alerts(user_id);
+-- CREATE INDEX idx_alerts_timestamp ON alerts(timestamp);
+-- CREATE INDEX idx_alerts_status ON alerts(status);
