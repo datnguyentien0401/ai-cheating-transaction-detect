@@ -16,12 +16,12 @@ INSERT INTO user_profiles (
 -- User 1: Regular user with consistent patterns
 (
     'user_1',
-    '["Vietnam", "Ho Chi Minh City"]',
-    '["mobile-android-12345", "desktop-windows-67890"]',
-    '["Food & Dining", "Shopping", "Transportation"]',
-    '["192.168.1.100", "192.168.1.101"]',
-    150000.00,
-    '["9", "10", "11", "12", "13", "14", "15", "16", "17", "18"]',
+    '["Vietnam"]',
+    '["mobile-ios-1"]',
+    '["electronics", "travel", "food", "shopping"]',
+    '["192.168.1.100"]',
+    892500,
+    '[9, 10, 11, 12, 13, 14, 16, 19, 20, 23]',
     NOW()
 );
 

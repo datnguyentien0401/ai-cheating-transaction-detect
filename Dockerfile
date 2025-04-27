@@ -36,4 +36,4 @@ ENV PATH="/root/.local/bin:${PATH}"
 EXPOSE 8000
 
 # Khởi động ứng dụng với uvicorn
-CMD ["python", "-m", "uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:8000", "api:app"]

@@ -79,6 +79,7 @@ def process_transaction():
         # Trả về kết quả
         response = {
             'status': 'success',
+            'transaction_id': transaction_data['transaction_id'],
             'data': analysis_result
         }
         

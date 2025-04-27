@@ -545,13 +545,17 @@ class FraudDetectionSystem:
     
     def update_user_profile(self, db: Session, user_id: str, transaction_data: dict):
         """Cập nhật hồ sơ người dùng với dữ liệu giao dịch mới vào database"""
+        self.logger.info(f"Updating user profile for user {user_id}")
+        
         # Tạo hoặc cập nhật user
         user = db.query(User).filter(User.user_id == user_id).first()
         if not user:
+            self.logger.info(f"Creating new user record for {user_id}")
             user = User(user_id=user_id)
             db.add(user)
         
         # Tạo transaction mới
+        self.logger.info(f"Creating new transaction record for transaction {transaction_data.get('transaction_id')}")
         transaction = Transaction(
             transaction_id=transaction_data.get('transaction_id'),
             user_id=user_id,
@@ -569,37 +573,49 @@ class FraudDetectionSystem:
         # Cập nhật user profile
         profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
         if not profile:
+            self.logger.info(f"Creating new user profile for {user_id}")
             profile = UserProfile(user_id=user_id)
             db.add(profile)
         
         # Cập nhật các thông tin profile
+        self.logger.info(f"Fetching transaction history for user {user_id}")
         transactions = self._get_user_transaction_history(db, user_id)
         if transactions:
+            self.logger.info(f"Found {len(transactions)} transactions for user {user_id}")
+            
             # Cập nhật locations
             locations = set(t.get('geolocation') for t in transactions if t.get('geolocation'))
             profile.common_locations = list(locations)
+            self.logger.debug(f"Updated common locations: {profile.common_locations}")
             
             # Cập nhật devices
             devices = set(t.get('device_id') for t in transactions if t.get('device_id'))
             profile.common_devices = list(devices)
+            self.logger.debug(f"Updated common devices: {profile.common_devices}")
             
             # Cập nhật categories
             categories = set(t.get('category') for t in transactions if t.get('category'))
             profile.common_categories = list(categories)
+            self.logger.debug(f"Updated common categories: {profile.common_categories}")
             
             # Cập nhật ip_addresses
             ip_addresses = set(t.get('ip_address') for t in transactions if t.get('ip_address'))
             profile.common_ip_addresses = list(ip_addresses)
+            self.logger.debug(f"Updated common IP addresses: {profile.common_ip_addresses}")
                 
             # Cập nhật avg_transaction_amount
             profile.avg_transaction_amount = sum(t.get('amount', 0) for t in transactions) / len(transactions)
+            self.logger.debug(f"Updated average transaction amount: {profile.avg_transaction_amount}")
             
             # Cập nhật typical_transaction_hours
-            hours = [t.get('timestamp', datetime.now()).hour for t in transactions if 'timestamp' in t]
+            hours = [datetime.fromisoformat(t['timestamp']).hour if isinstance(t['timestamp'], str) else t['timestamp'].hour for t in transactions if 'timestamp' in t]
             profile.typical_transaction_hours = list(set(hours))
+            self.logger.debug(f"Updated typical transaction hours: {profile.typical_transaction_hours}")
         
         profile.last_updated = datetime.now()
+        self.logger.info(f"Committing updates to database for user {user_id}")
         db.commit()
+        self.logger.info(f"Successfully updated user profile for {user_id}")
     
     def analyze_transaction(self, db: Session, transaction_data: dict):
         """
