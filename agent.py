@@ -195,8 +195,16 @@ class FraudDetectionSystem:
                 self.logger.info(f"Đã tải thành công {len(ip_list)} IP độc hại")
                 return set(ip_list)
             else:
-                self.logger.warning(f"Lỗi khi tải IP độc hại: {response.status_code} - {response.text}")
-                return set()
+                self.logger.warning(f"Lỗi khi tải IP độc hại từ API, đọc từ file dự phòng")
+                try:
+                    with open('ip_data.json', 'r') as f:
+                        data = json.loads(f.read())
+                        ip_list = [item['ipAddress'] for item in data.get('data', [])]
+                        self.logger.info(f"Đã tải {len(ip_list)} IP độc hại từ file")
+                        return set(ip_list)
+                except Exception as e:
+                    self.logger.warning(f"Không thể đọc file ip_data.json: {str(e)}")
+                    return set()
         except Exception as e:
             self.logger.warning(f"Không thể tải danh sách IP độc hại: {str(e)}")
             return set()

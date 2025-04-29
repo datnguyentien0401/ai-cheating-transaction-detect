@@ -28,11 +28,11 @@ def generate_training_data(num_transactions: int = 1000) -> List[Dict]:
     user_ids = [f'user_{i}' for i in range(num_users)]
     
     # Generate normal devices
-    normal_devices = ['mobile-ios', 'web-chrome']
+    normal_devices = ['mobile-ios', 'web-chrome', 'web-safari']
     
     # Generate locations
     locations = [
-        'Vietnam', 'USA', 'UK', 'Japan', 'South Korea',
+        'Vietnam', 'USA', 'UK', 'Japan', 'South Korea', 'Taiwan',
         'Singapore', 'Thailand', 'Malaysia', 'Indonesia', 'Philippines'
     ]
     
@@ -68,38 +68,88 @@ def generate_training_data(num_transactions: int = 1000) -> List[Dict]:
     fraud_categories = {
         'electronics': [
             'Laptop purchase',
-            'Smartphone payment',
+            'Smartphone payment', 
             'Gaming console',
-            'High-end electronics'
+            'High-end electronics',
+            'Camera equipment',
+            'Smart home devices',
+            'Audio systems',
+            'Tablet purchase'
         ],
         'entertainment': [
             'Gaming credits',
             'Streaming subscription',
             'Online gaming',
-            'Digital content'
+            'Digital content',
+            'Concert tickets',
+            'Movie tickets',
+            'Theme park passes',
+            'Sports events'
         ],
         'travel': [
             'Flight booking',
-            'Hotel reservation',
+            'Hotel reservation', 
             'Tour package',
-            'International travel'
+            'International travel',
+            'Cruise booking',
+            'Car rental',
+            'Travel insurance',
+            'Resort booking'
         ],
         'luxury': [
             'Jewelry purchase',
             'Luxury watch',
             'Designer goods',
-            'High-end fashion'
+            'High-end fashion',
+            'Art gallery purchase',
+            'Antique items',
+            'Limited editions',
+            'Premium accessories'
         ],
         'investment': [
             'Cryptocurrency purchase',
             'Stock trading',
-            'Forex trading',
-            'Investment fund'
+            'Forex trading', 
+            'Investment fund',
+            'Gold purchase',
+            'Real estate deposit',
+            'Bond trading',
+            'NFT purchase'
+        ],
+        'gambling': [
+            'Online casino',
+            'Sports betting',
+            'Lottery tickets',
+            'Poker games',
+            'Slot machines',
+            'Race betting',
+            'Bingo games',
+            'Fantasy sports'
+        ],
+        'services': [
+            'Web hosting',
+            'Software licenses',
+            'Cloud storage',
+            'VPN services',
+            'Domain purchase',
+            'Online courses',
+            'Consulting fees',
+            'Premium memberships'
+        ],
+        'health': [
+            'Medical equipment',
+            'Health supplements',
+            'Fitness gear',
+            'Spa services',
+            'Beauty treatments',
+            'Dental services',
+            'Vision care',
+            'Wellness programs'
         ]
     }
     
     # Generate currencies
-    currencies = ['VND', 'USD', 'EUR', 'JPY', 'KRW', 'SGD', 'THB']
+    currencies = ['VND', 'USD', 'EUR', 'JPY', 'KRW', 'SGD', 'THB', 'TWD']
     
     # Generate transactions
     transactions = []
@@ -159,10 +209,18 @@ def generate_training_data(num_transactions: int = 1000) -> List[Dict]:
             'geolocation': random.choice(locations),
             'device_id': random.choice([
                 'mobile-android',
-                'mobile-ios',
+                'mobile-ios', 
                 'web-chrome',
                 'web-safari',
+                'web-firefox',
+                'web-edge',
                 'tablet-android',
+                'tablet-ios',
+                'desktop-windows',
+                'desktop-mac',
+                'desktop-linux',
+                'smart-tv',
+                'game-console',
                 'unknown-device'
             ]),
             'is_fraud': True
@@ -176,7 +234,7 @@ def generate_training_data(num_transactions: int = 1000) -> List[Dict]:
 
 if __name__ == "__main__":
     # Generate sample data
-    data = generate_training_data(10000)
+    data = generate_training_data(5000000)
     
     # Save to file
     with open('training_data.json', 'w') as f:
