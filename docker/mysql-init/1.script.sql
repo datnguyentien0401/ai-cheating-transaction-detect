@@ -63,18 +63,18 @@ CREATE TABLE IF NOT EXISTS user_profiles (
 );
 
 -- Create alerts table
--- CREATE TABLE IF NOT EXISTS alerts (
---     alert_id INT AUTO_INCREMENT PRIMARY KEY,
---     user_id VARCHAR(50),
---     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
---     risk_score FLOAT,
---     reasons JSON,
---     transaction_id VARCHAR(50),
---     transaction_details JSON,
---     fraud_reasons JSON,
---     FOREIGN KEY (user_id) REFERENCES users(user_id),
---     FOREIGN KEY (transaction_id) REFERENCES transactions(transaction_id)
--- );
+CREATE TABLE IF NOT EXISTS alerts (
+    alert_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id VARCHAR(50),
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    risk_score FLOAT,
+    reasons JSON,
+    transaction_id VARCHAR(50),
+    transaction_details JSON,
+    fraud_reasons JSON,
+    FOREIGN KEY (user_id) REFERENCES users(user_id),
+    FOREIGN KEY (transaction_id) REFERENCES transactions(transaction_id)
+);
 
 -- Create indexes for better performance
 CREATE INDEX idx_transactions_user_id ON transactions(user_id);

@@ -7,7 +7,7 @@ import uuid
 import os
 import argparse
 from agent import FraudDetectionSystem
-from database import get_db, init_db, User, TransactionAnalysis, UserProfile
+from database import get_db, init_db, User, TransactionAnalysis, UserProfile, Alert
 from dotenv import load_dotenv
 
 # Parse command line arguments
