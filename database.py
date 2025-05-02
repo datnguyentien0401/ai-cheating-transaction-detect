@@ -116,21 +116,21 @@ class UserProfile(Base):
     # Relationships
     user = relationship("User", back_populates="profile")
 
-class Alert(Base):
-    """Alert model for storing fraud alerts"""
-    __tablename__ = "alerts"
+# class Alert(Base):
+#     """Alert model for storing fraud alerts"""
+#     __tablename__ = "alerts"
 
-    alert_id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(String(50), ForeignKey('users.user_id'))
-    timestamp = Column(DateTime, default=datetime.now)
-    risk_score = Column(Float)
-    reasons = Column(JSON)  # List of reasons for alert
-    transaction_id = Column(String(50), ForeignKey('transaction_analyses.transaction_id'))
-    transaction_details = Column(JSON)
-    status = Column(String(20), default='new')  # new, reviewed, resolved, false_positive
+#     alert_id = Column(Integer, primary_key=True, autoincrement=True)
+#     user_id = Column(String(50), ForeignKey('users.user_id'))
+#     timestamp = Column(DateTime, default=datetime.now)
+#     risk_score = Column(Float)
+#     reasons = Column(JSON)  # List of reasons for alert
+#     transaction_id = Column(String(50), ForeignKey('transaction_analyses.transaction_id'))
+#     transaction_details = Column(JSON)
+#     status = Column(String(20), default='new')  # new, reviewed, resolved, false_positive
     
-    # Relationships
-    user = relationship("User", back_populates="alerts")
+#     # Relationships
+#     user = relationship("User", back_populates="alerts")
 
 def get_db():
     """Get database session"""

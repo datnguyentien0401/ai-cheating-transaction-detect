@@ -19,7 +19,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # RUN pip install --no-cache-dir "uvicorn[standard]" fastapi python-dotenv pymysql openai
 
 # Sao chép toàn bộ mã nguồn vào container
-COPY . .
+# COPY . .
 
 # Tạo các thư mục cần thiết
 RUN mkdir -p /app/data/models

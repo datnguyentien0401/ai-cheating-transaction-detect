@@ -7,7 +7,7 @@ import uuid
 import os
 import argparse
 from agent import FraudDetectionSystem
-from database import get_db, init_db, User, TransactionAnalysis, UserProfile, Alert
+from database import get_db, init_db, User, TransactionAnalysis, UserProfile
 from dotenv import load_dotenv
 
 # Parse command line arguments
@@ -97,7 +97,8 @@ def train_model():
     """Train the fraud detection model with new transaction data"""
     try:
         # Nhận dữ liệu huấn luyện từ request
-        training_data = request.json.get('training_data', [])
+        with open('training_data.json', 'r') as f:
+            training_data = json.load(f).get('training_data', [])
         
         if not training_data or len(training_data) < 10:
             return jsonify({

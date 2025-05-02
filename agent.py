@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 import pickle
 import requests
 import logging
-from database import get_db, User, Transaction,TransactionAnalysis, UserProfile, Alert
+from database import get_db, User, Transaction,TransactionAnalysis, UserProfile
 from sqlalchemy.orm import Session
 import json
 import os

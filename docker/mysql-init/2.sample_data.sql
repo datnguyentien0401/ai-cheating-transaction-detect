@@ -36,5 +36,5 @@ INSERT INTO transactions (transaction_id, user_id, amount, currency, description
 ('TX006', 'user_1', 1500000, 'VND', 'Hotel booking for weekend trip', 'travel', '2024-03-20 20:30:00', '192.168.1.100', 'Vietnam', 'mobile-ios-1'),
 ('TX007', 'user_1', 100000, 'VND', 'Late night food delivery', 'food', '2024-03-20 23:45:00', '192.168.1.100', 'Vietnam', 'mobile-ios-1'),
 ('TX008', 'user_1', 250000, 'VND', 'Online shopping at Shopee', 'shopping', '2024-03-21 09:15:00', '192.168.1.100', 'Vietnam', 'mobile-ios-1'),
-('TX009', 'user_1', 1000000, 'VND', 'Flight booking to Da Nang', 'travel', '2024-03-21 11:30:00', '192.168.1.100', 'Vietnam'),
+('TX009', 'user_1', 1000000, 'VND', 'Flight booking to Da Nang', 'travel', '2024-03-21 11:30:00', '192.168.1.100', 'Vietnam', 'mobile-ios-1'),
 ('TX010', 'user_1', 350000, 'VND', 'Business lunch with client', 'food', '2024-03-21 13:00:00', '192.168.1.100', 'Vietnam', 'mobile-ios-1');
