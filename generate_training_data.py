@@ -176,7 +176,7 @@ def generate_training_data(num_transactions: int = 1000) -> List[Dict]:
                 days=random.randint(0, 30),
                 hours=random.randint(8, 23)  # From 8 AM to 11 PM
             )).isoformat(),
-            'ip_address': f'192.168.{random.randint(1, 255)}.{random.randint(1, 255)}',
+            'ip_address': f'203.160.{random.randint(1, 255)}.{random.randint(1, 255)}',
             'geolocation': 'Vietnam',
             'device_id': random.choice(normal_devices),
             'is_fraud': False
@@ -234,7 +234,7 @@ def generate_training_data(num_transactions: int = 1000) -> List[Dict]:
 
 if __name__ == "__main__":
     # Generate sample data
-    data = generate_training_data(5000000)
+    data = generate_training_data(100000)
     
     # Save to file
     with open('training_data.json', 'w') as f:
